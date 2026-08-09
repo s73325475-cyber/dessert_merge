@@ -94,46 +94,29 @@
     <div class="hint" id="boot-hint">게임을 불러오는 중…</div>
   </div>
 
-  <script src="flutter.js" defer></script>
   <script>
-    (function () {
-      var loader = document.getElementById('boot-loader');
-      var hint = document.getElementById('boot-hint');
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (reg) { reg.unregister(); });
+      });
+    }
 
-      function hideLoader() {
-        if (!loader || loader.classList.contains('hidden')) return;
+    window.addEventListener('flutter-first-frame', function () {
+      var loader = document.getElementById('boot-loader');
+      if (loader) {
         loader.classList.add('hidden');
         setTimeout(function () { loader.remove(); }, 400);
       }
+    });
 
-      window.addEventListener('flutter-first-frame', hideLoader);
-
-      setTimeout(function () {
-        if (hint && loader && !loader.classList.contains('hidden')) {
-          hint.textContent = '모바일은 최초 로딩에 10~30초 걸릴 수 있어요…';
-        }
-      }, 8000);
-
-      window.addEventListener('load', function () {
-        if (!window._flutter || !_flutter.loader) {
-          if (hint) hint.textContent = '게임 로더를 불러오지 못했습니다. 새로고침해 주세요.';
-          return;
-        }
-
-        _flutter.loader.load({
-          onEntrypointLoaded: function (engineInitializer) {
-            engineInitializer.initializeEngine().then(function (appRunner) {
-              appRunner.runApp();
-            }).catch(function (err) {
-              console.error(err);
-              if (hint) {
-                hint.textContent = '로드 실패. Wi-Fi 확인 후 새로고침해 주세요.';
-              }
-            });
-          }
-        });
-      });
-    })();
+    setTimeout(function () {
+      var hint = document.getElementById('boot-hint');
+      var loader = document.getElementById('boot-loader');
+      if (hint && loader && !loader.classList.contains('hidden')) {
+        hint.textContent = '최초 로딩은 10~30초 걸릴 수 있어요…';
+      }
+    }, 10000);
   </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

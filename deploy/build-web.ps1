@@ -12,8 +12,8 @@ Set-Location (Split-Path $PSScriptRoot -Parent)
 Write-Host ">> flutter pub get"
 flutter pub get
 
-Write-Host ">> flutter build web --release --wasm --base-href=$BaseHref"
-flutter build web --release --wasm --base-href=$BaseHref
+Write-Host ">> flutter build web --release --base-href=$BaseHref"
+flutter build web --release --base-href=$BaseHref
 
 Write-Host ">> SPA fallback (404.html)"
 Copy-Item "build\web\index.html" "build\web\404.html" -Force
