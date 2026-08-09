@@ -9,7 +9,6 @@
   <meta name="description" content="디저트를 쏴서 합치는 물리 기반 빌리어드 머지 게임. 모바일 세로 화면에 최적화.">
   <meta name="theme-color" content="#3d2a5c">
 
-  <!-- Open Graph (GitHub Pages 배포 후 og:url을 실제 URL로 교체) -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="디저트 빌리어드 머지">
   <meta property="og:description" content="디저트를 쏴서 합치는 물리 기반 빌리어드 머지 게임. 모바일 세로 화면 최적화.">
@@ -37,12 +36,15 @@
     html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
       height: 100%;
-      background: linear-gradient(180deg, #3d2a5c 0%, #1a1028 100%);
+      min-height: 100dvh;
+      background: #120a1c;
       color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
       overscroll-behavior: none;
       touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     #boot-loader {
       position: fixed;
@@ -53,6 +55,7 @@
       justify-content: center;
       gap: 16px;
       z-index: 9999;
+      background: linear-gradient(180deg, #3d2a5c 0%, #1a1028 100%);
       transition: opacity 0.35s ease;
     }
     #boot-loader.hidden {
@@ -68,6 +71,9 @@
     #boot-loader .hint {
       font-size: 13px;
       opacity: 0.65;
+      text-align: center;
+      padding: 0 24px;
+      line-height: 1.5;
     }
     #boot-loader .spinner {
       width: 36px;
@@ -85,18 +91,49 @@
     <div class="emoji" aria-hidden="true">🍰</div>
     <div class="title">디저트 빌리어드 머지</div>
     <div class="spinner" aria-hidden="true"></div>
-    <div class="hint">게임을 불러오는 중…</div>
+    <div class="hint" id="boot-hint">게임을 불러오는 중…</div>
   </div>
 
+  <script src="flutter.js" defer></script>
   <script>
-    window.addEventListener('flutter-first-frame', function () {
+    (function () {
       var loader = document.getElementById('boot-loader');
-      if (loader) {
+      var hint = document.getElementById('boot-hint');
+
+      function hideLoader() {
+        if (!loader || loader.classList.contains('hidden')) return;
         loader.classList.add('hidden');
         setTimeout(function () { loader.remove(); }, 400);
       }
-    });
+
+      window.addEventListener('flutter-first-frame', hideLoader);
+
+      setTimeout(function () {
+        if (hint && loader && !loader.classList.contains('hidden')) {
+          hint.textContent = '모바일은 최초 로딩에 10~30초 걸릴 수 있어요…';
+        }
+      }, 8000);
+
+      window.addEventListener('load', function () {
+        if (!window._flutter || !_flutter.loader) {
+          if (hint) hint.textContent = '게임 로더를 불러오지 못했습니다. 새로고침해 주세요.';
+          return;
+        }
+
+        _flutter.loader.load({
+          onEntrypointLoaded: function (engineInitializer) {
+            engineInitializer.initializeEngine().then(function (appRunner) {
+              appRunner.runApp();
+            }).catch(function (err) {
+              console.error(err);
+              if (hint) {
+                hint.textContent = '로드 실패. Wi-Fi 확인 후 새로고침해 주세요.';
+              }
+            });
+          }
+        });
+      });
+    })();
   </script>
-  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

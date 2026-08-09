@@ -16,10 +16,14 @@ import 'ui/app_ui.dart';
 import 'ui/mission_intro_banner.dart';
 import 'ui/stage_select_picker.dart';
 import 'ui/main_menu_screen.dart';
+import 'ui/web_mobile_shell.dart';
 import 'ui/web_play_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  }
   final prefs = await SharedPreferences.getInstance();
   final store = Store(prefs);
   runApp(DessertMergeApp(store: store, audio: AudioManager(store)));
@@ -115,17 +119,27 @@ class _DessertMergeAppState extends State<DessertMergeApp> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ThemeData(
+      useMaterial3: true,
+      fontFamily: kIsWeb ? 'Malgun Gothic' : null,
+      textTheme: kIsWeb
+          ? ThemeData.light().textTheme.apply(
+                fontFamily: 'Malgun Gothic',
+                bodyColor: Colors.white,
+                displayColor: Colors.white,
+              )
+          : GoogleFonts.gowunDodumTextTheme(),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: _btnStyle(const Color(0xfff5b945)),
+      ),
+    );
+
     return MaterialApp(
       navigatorKey: _navKey,
       debugShowCheckedModeBanner: false,
       title: AppReleaseConfig.appName,
-      theme: ThemeData(
-        useMaterial3: true,
-        textTheme: GoogleFonts.gowunDodumTextTheme(),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: _btnStyle(const Color(0xfff5b945)),
-        ),
-      ),
+      theme: theme,
+      builder: (context, child) => WebMobileShell(child: child),
       home: !_webGatePassed
           ? WebPlayGate(
               audio: widget.audio,
