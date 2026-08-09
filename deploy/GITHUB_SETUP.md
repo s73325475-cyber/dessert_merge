@@ -1,78 +1,86 @@
-# GitHub Pages 배포 — 1회 설정
+# GitHub 배포 — 브라우저에서 하는 방법 (추천)
 
-로컬 준비(커밋)는 완료되었습니다. **GitHub 로그인 후 push**만 하면 Actions가 자동 배포합니다.
-
----
-
-## ① GitHub CLI 로그인 (최초 1회)
-
-PowerShell에서:
-
-```powershell
-gh auth login
-```
-
-선택 가이드:
-1. **GitHub.com**
-2. **HTTPS**
-3. **Login with a web browser** (브라우저 인증 추천)
-4. 표시된 코드 입력 → GitHub에서 Authorize
+`gh` CLI 없이 **GitHub 웹 + PowerShell git push** 만으로 배포합니다.  
+브라우저에 이미 GitHub 로그인되어 있으면 Credential Manager 창만 뜨면 됩니다.
 
 ---
 
-## ② 저장소 생성 + push (한 번에)
+## ① GitHub 웹에서 저장소 만들기 (1분)
 
-프로젝트 폴더에서:
+1. https://github.com/new 접속 (또는 왼쪽 **New** 버튼)
+2. 아래처럼 입력:
+
+| 항목 | 값 |
+|------|-----|
+| Repository name | **`dessert_merge`** |
+| Public | ✅ 선택 |
+| Add README | ❌ **체크 해제** |
+| Add .gitignore | ❌ None |
+| Choose a license | ❌ None |
+
+3. **Create repository** 클릭
+
+> ⚠️ README를 추가하면 push 충돌이 납니다. **빈 저장소**로 만드세요.
+
+---
+
+## ② PowerShell에서 코드 올리기
 
 ```powershell
 cd "C:\mini game_01\dessert_merge"
-git branch -M main
-gh repo create dessert_merge --public --source=. --remote=origin --push
+.\deploy\push-to-github.ps1
 ```
 
-> 이미 GitHub에 `dessert_merge` 저장소가 있으면:
-> ```powershell
-> git branch -M main
-> git remote add origin https://github.com/s73325475-cyber/dessert_merge.git
-> git push -u origin main
-> ```
+- Git Credential Manager 창이 뜨면 **브라우저로 GitHub 로그인** → 허용
+- `Push OK!` 가 나오면 성공
 
 ---
 
-## ③ GitHub Pages 활성화
+## ③ GitHub 웹에서 Pages 켜기 (1분)
 
 1. https://github.com/s73325475-cyber/dessert_merge/settings/pages
-2. **Build and deployment → Source: GitHub Actions** 선택
-3. **Actions** 탭에서 `Deploy Web to GitHub Pages` 워크플로 실행 확인 (push 후 자동 시작)
+2. **Build and deployment**
+3. **Source → GitHub Actions** 선택
 
 ---
 
 ## ④ 배포 확인 (2~5분 후)
 
+**Actions** 탭에서 `Deploy Web to GitHub Pages` ✅ 초록색 확인 후:
+
 | URL | 용도 |
 |-----|------|
-| https://s73325475-cyber.github.io/dessert_merge/ | 메인 |
 | https://s73325475-cyber.github.io/dessert_merge/?mode=arcade | **블로그 링크** |
+| https://s73325475-cyber.github.io/dessert_merge/ | 메인 메뉴 |
 
-모바일에서 **탭하여 시작** → 아케이드 진입 확인.
+모바일: **탭하여 시작** → 아케이드
 
 ---
 
-## ⑤ 블로그 글 링크
+## 블로그 글 링크
 
 ```
 https://s73325475-cyber.github.io/dessert_merge/?mode=arcade
 ```
 
-`deploy/BLOG_POST_NAVER.txt` 에도 동일 URL 반영됨.
-
 ---
 
-## 문제 해결
+## 자주 나는 문제
 
 | 증상 | 해결 |
 |------|------|
-| 404 | Actions 배포 완료 대기 · Pages Source = GitHub Actions 확인 |
-| Actions 실패 | Actions 탭에서 로그 확인 (Flutter 빌드 오류) |
-| 흰 화면 | `--base-href="/dessert_merge/"` 확인 (워크플로에 포함됨) |
-| push 거부 | `gh auth login` 후 재시도 |
+| `repository not found` | ①번 저장소를 먼저 만들었는지 확인 (이름 `dessert_merge`) |
+| push 거부 / 로그인 | Credential Manager 창에서 GitHub 계정 허용 |
+| 404 (배포 후) | Pages Source = **GitHub Actions** 인지 확인 |
+| Actions 빨간색 | Actions 탭 → 워크플로 로그 확인 |
+
+---
+
+## (선택) gh CLI 쓰고 싶을 때
+
+```powershell
+gh auth login
+# GitHub.com → HTTPS → Login with a web browser
+```
+
+그 후 `.\deploy\push-to-github.ps1` 재실행.
