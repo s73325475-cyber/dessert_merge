@@ -46,8 +46,9 @@
       overscroll-behavior: none;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
     }
-    #start-screen, #boot-loader {
+    #start-screen, #boot-loader, #error-screen {
       position: fixed;
       inset: 0;
       display: flex;
@@ -61,11 +62,16 @@
       box-sizing: border-box;
       text-align: center;
     }
-    #boot-loader { display: none; z-index: 9999; }
-    #boot-loader.hidden { opacity: 0; pointer-events: none; transition: opacity 0.35s ease; }
+    #boot-loader, #error-screen { display: none; }
+    #boot-loader { z-index: 9999; }
+    #boot-loader.hidden, #error-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
     .screen-emoji { font-size: 72px; line-height: 1; }
     .screen-title { font-size: 22px; font-weight: 800; margin: 0; }
-    .screen-sub { font-size: 14px; opacity: 0.7; margin: 0; line-height: 1.5; }
+    .screen-sub { font-size: 14px; opacity: 0.7; margin: 0; line-height: 1.5; max-width: 340px; }
     .screen-badge {
       display: inline-block;
       padding: 8px 14px;
@@ -75,7 +81,19 @@
       font-size: 13px;
       color: #9ad0ec;
     }
-    #start-btn {
+    #inapp-warn {
+      display: none;
+      width: min(100%, 340px);
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 93, 93, 0.16);
+      border: 1px solid rgba(255, 143, 143, 0.35);
+      color: #ffd6d6;
+      font-size: 13px;
+      line-height: 1.55;
+      text-align: left;
+    }
+    #start-btn, #retry-btn {
       margin-top: 8px;
       width: min(100%, 320px);
       padding: 18px 24px;
@@ -87,6 +105,9 @@
       font-weight: 800;
       cursor: pointer;
       box-shadow: 0 4px 16px rgba(245,185,69,0.35);
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
     }
     #boot-loader .spinner {
       width: 36px;
@@ -106,8 +127,12 @@
     <h1 class="screen-title">디저트 빌리어드 머지</h1>
     <p class="screen-sub">디저트를 쏴서 합치는<br>물리 빌리어드 머지 게임</p>
     <div class="screen-badge" id="mode-badge">아케이드 모드</div>
+    <div id="inapp-warn">
+      <strong>앱 내 브라우저</strong>에서는 실행이 안 될 수 있어요.<br>
+      우측 상단 <strong>···</strong> 메뉴 → <strong>Safari</strong> 또는 <strong>Chrome</strong>으로 열어 주세요.
+    </div>
     <button id="start-btn" type="button">▶  탭하여 시작</button>
-    <p class="screen-sub">세로 화면 · Wi-Fi/데이터 환경 권장</p>
+    <p class="screen-sub">세로 화면 · Wi-Fi/데이터 환경 권장<br>최초 실행 시 10~30초 걸릴 수 있어요</p>
   </div>
 
   <div id="boot-loader" aria-live="polite" aria-busy="true">
@@ -115,6 +140,13 @@
     <div class="screen-title">디저트 빌리어드 머지</div>
     <div class="spinner" aria-hidden="true"></div>
     <p class="screen-sub" id="boot-hint">게임을 불러오는 중…</p>
+  </div>
+
+  <div id="error-screen" role="alert">
+    <div class="screen-emoji" aria-hidden="true">⚠️</div>
+    <div class="screen-title">불러오기 실패</div>
+    <p class="screen-sub" id="error-msg">네트워크 또는 브라우저 호환 문제일 수 있어요.</p>
+    <button id="retry-btn" type="button">다시 시도</button>
   </div>
 
   <script>
@@ -128,8 +160,12 @@
       var flutterStarted = false;
       var startScreen = document.getElementById('start-screen');
       var bootLoader = document.getElementById('boot-loader');
+      var errorScreen = document.getElementById('error-screen');
+      var errorMsg = document.getElementById('error-msg');
       var modeBadge = document.getElementById('mode-badge');
       var bootHint = document.getElementById('boot-hint');
+      var inappWarn = document.getElementById('inapp-warn');
+      var loadTimeoutId = null;
 
       var params = new URLSearchParams(location.search);
       var mode = (params.get('mode') || params.get('play') || 'arcade').toLowerCase();
@@ -139,8 +175,28 @@
       }
 
       function isMobileLike() {
-        return window.innerWidth <= 768 ||
+        return window.innerWidth <= 820 ||
           /Android|iPhone|iPad|iPod|Mobile|SamsungBrowser/i.test(navigator.userAgent);
+      }
+
+      function isInAppBrowser() {
+        var ua = navigator.userAgent || '';
+        return /NAVER/i.test(ua) ||
+          /KAKAOTALK/i.test(ua) ||
+          /Instagram/i.test(ua) ||
+          /Line\//i.test(ua) ||
+          /FBAN|FBAV/i.test(ua) ||
+          (/iPhone|iPad|iPod/i.test(ua) && !/Safari/i.test(ua));
+      }
+
+      function hasWebGL() {
+        try {
+          var c = document.createElement('canvas');
+          return !!(c.getContext('webgl2') || c.getContext('webgl') ||
+            c.getContext('experimental-webgl'));
+        } catch (e) {
+          return false;
+        }
       }
 
       function markGateReady() {
@@ -150,23 +206,68 @@
         window.__dessertUserGesture = true;
       }
 
+      function hideAllScreens() {
+        if (startScreen) startScreen.style.display = 'none';
+        if (bootLoader) bootLoader.style.display = 'none';
+        if (errorScreen) errorScreen.style.display = 'none';
+      }
+
+      function showError(message) {
+        if (loadTimeoutId) clearTimeout(loadTimeoutId);
+        hideAllScreens();
+        if (errorMsg) errorMsg.textContent = message;
+        if (errorScreen) errorScreen.style.display = 'flex';
+      }
+
+      function scheduleLoadTimeout() {
+        if (loadTimeoutId) clearTimeout(loadTimeoutId);
+        loadTimeoutId = setTimeout(function () {
+          showError(
+            '로딩 시간이 너무 길어요. Wi-Fi/데이터 연결을 확인하거나, ' +
+            'Safari·Chrome 등 외부 브라우저에서 다시 열어 주세요.'
+          );
+        }, 90000);
+      }
+
       function startFlutter() {
         if (flutterStarted) return;
+
+        if (!hasWebGL()) {
+          showError('이 기기/브라우저는 WebGL(게임 그래픽)을 지원하지 않아요. Safari 또는 Chrome에서 열어 주세요.');
+          return;
+        }
+
         flutterStarted = true;
         markGateReady();
-        if (startScreen) startScreen.remove();
-        if (bootLoader) bootLoader.style.display = 'flex';
+        hideAllScreens();
+        if (bootLoader) {
+          bootLoader.style.display = 'flex';
+          bootLoader.classList.remove('hidden');
+        }
+        scheduleLoadTimeout();
 
         var s = document.createElement('script');
         s.src = 'flutter_bootstrap.js';
         s.async = true;
+        s.onerror = function () {
+          showError('게임 파일을 불러오지 못했어요. 네트워크 연결 후 다시 시도해 주세요.');
+        };
         document.body.appendChild(s);
       }
 
       window.addEventListener('flutter-first-frame', function () {
+        if (loadTimeoutId) clearTimeout(loadTimeoutId);
         if (!bootLoader) return;
         bootLoader.classList.add('hidden');
         setTimeout(function () { bootLoader.remove(); }, 400);
+      });
+
+      window.addEventListener('error', function (ev) {
+        if (!flutterStarted || !bootLoader || bootLoader.style.display === 'none') return;
+        var msg = (ev && ev.message) ? String(ev.message) : '';
+        if (/wasm|webgl|canvaskit|skwasm|flutter/i.test(msg)) {
+          showError('그래픽 엔진 로딩에 실패했어요. Safari·Chrome에서 열거나 페이지를 새로고침해 주세요.');
+        }
       });
 
       setTimeout(function () {
@@ -176,15 +277,39 @@
         }
       }, 10000);
 
+      function onStartTap(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        startFlutter();
+      }
+
       var startBtn = document.getElementById('start-btn');
       if (startBtn) {
-        startBtn.addEventListener('click', function (e) {
-          e.preventDefault();
-          startFlutter();
+        startBtn.addEventListener('touchstart', onStartTap, { passive: false });
+        startBtn.addEventListener('click', onStartTap);
+      }
+      if (startScreen) {
+        startScreen.addEventListener('touchstart', function (e) {
+          if (e.target === startBtn) return;
+          onStartTap(e);
+        }, { passive: false });
+      }
+
+      var retryBtn = document.getElementById('retry-btn');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', function () {
+          flutterStarted = false;
+          location.reload();
         });
       }
 
-      // PC는 바로 로드, 모바일은 시작 버튼 필요
+      if (inappWarn && isInAppBrowser()) {
+        inappWarn.style.display = 'block';
+      }
+
+      // PC·태블릿 가로: 바로 로드 / 모바일: 시작 버튼 필요
       if (!isMobileLike()) {
         startFlutter();
       }

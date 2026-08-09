@@ -211,8 +211,9 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
 
   double? _graceTimer;
   int _shotsConsumedThisStage = 0;
-  /// 이번 스테이지에서 소모한 발사 횟수 (광고 부활 시 회복량)
+  /// 이번 스테이지에서 소모한 발사 횟수 (통계용)
   int get stageShotsConsumed => _shotsConsumedThisStage;
+  int get adContinueRewardShots => GameConfig.adContinueShots;
 
   void _resetStageShotCounter() => _shotsConsumedThisStage = 0;
 
@@ -309,6 +310,8 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
       jumpToStage(n, chapterSelect: ch);
     } else if (store.hasGameSave) {
       restoreFromStore();
+    } else if (runMode == GameRunMode.arcade) {
+      // startArcadeRun() 등으로 이미 세션이 준비된 경우 (_startStage가 campaign으로 덮어쓰지 않음)
     } else {
       _startStage(1);
       audio.startBgm(1);
@@ -524,6 +527,12 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
       kDessertNames[tier.clamp(0, kMaxTier)];
 
   void _updateMission() {
+    if (runMode == GameRunMode.arcade) {
+      mission.value = '🎮 ARCADE · Wave $_arcadeWave';
+      missionHint.value = 'BEST ${best.value} 도전!';
+      wantedSpawnTiers.value = {};
+      return;
+    }
     final m = stage.mission;
     switch (m.type) {
       case MissionType.order:
@@ -545,10 +554,6 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
         mission.value = '${m.emoji} BOSS  ${m.hp}/${m.maxHp}';
         break;
     }
-    if (runMode == GameRunMode.arcade) {
-      wantedSpawnTiers.value = {};
-      return;
-    }
     wantedSpawnTiers.value = switch (m.type) {
       MissionType.order => m.order
           .where((it) => it.have < it.need)
@@ -560,6 +565,10 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
   }
 
   void _updateBossUi() {
+    if (runMode == GameRunMode.arcade) {
+      bossActive.value = false;
+      return;
+    }
     final m = stage.mission;
     if (m.type == MissionType.boss) {
       bossActive.value = true;
@@ -1487,18 +1496,24 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
   }
 
   void continueGame() {
-    showRewardedAd(() {
-      final restore = _shotsConsumedThisStage;
-      if (restore > 0) {
-        stage.grantShots(restore);
-      }
-      status.value = 'playing';
-      _graceTimer = null;
-      _resetBossGimmicks();
-      shots.value = stage.shots;
-      _resetStageShotCounter();
-      audio.stageStart();
-    });
+    if (status.value != 'over') return;
+    showRewardedAd(_resumeAfterAdContinue);
+  }
+
+  void _resumeAfterAdContinue() {
+    final grant = GameConfig.adContinueShots;
+    stage.grantShots(grant);
+    status.value = 'playing';
+    _graceTimer = null;
+    _resetBossGimmicks();
+    _touchPos = null;
+    _aimFired = false;
+    blocked = false;
+    shots.value = stage.shots;
+    _resetStageShotCounter();
+    _showBonus('▶️ +$grant 🚀');
+    audio.stageStart();
+    persistSession();
   }
 
   void restart() {
@@ -1540,7 +1555,6 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
 
   /// 진행 중인 판 저장 (앱 재실행 후 이어하기)
   void persistSession() {
-    if (runMode == GameRunMode.arcade) return;
     if (_chapterAnchorStage != null) return;
     if (status.value != 'playing' && status.value != 'over') return;
     final cleared = sessionClearedStage;
@@ -1549,7 +1563,6 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
   }
 
   Future<void> persistSessionAsync() async {
-    if (runMode == GameRunMode.arcade) return;
     if (_chapterAnchorStage != null) return;
     if (status.value != 'playing' && status.value != 'over') return;
     final cleared = sessionClearedStage;
@@ -1573,6 +1586,8 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
     });
     return {
       'v': 1,
+      'runMode': runMode.name,
+      'arcadeWave': _arcadeWave,
       'stage': stage.stage,
       'clearedStage': sessionClearedStage,
       'boss': stage.boss,
@@ -1614,6 +1629,12 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
     _missionEpoch = 0;
     _missionCountingEnabled = false;
 
+    final savedMode = data['runMode'] as String?;
+    runMode = savedMode == null
+        ? GameRunMode.campaign
+        : GameRunMode.values.byName(savedMode);
+    _arcadeWave = (data['arcadeWave'] as num?)?.toInt() ?? 1;
+
     stage.stage = (data['stage'] as num).toInt();
     stage.boss = data['boss'] as bool? ?? stage.isBossStage(stage.stage);
     stage.shots = (data['stageShots'] as num).toInt();
@@ -1637,7 +1658,15 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
 
     score.value = (data['score'] as num).toInt();
     status.value = data['status'] as String? ?? 'playing';
-    stageNo.value = stage.stage;
+    if (runMode == GameRunMode.arcade) {
+      stageNo.value = _arcadeWave;
+      bossActive.value = false;
+      mission.value = '🎮 ARCADE · Wave $_arcadeWave';
+      missionHint.value = 'BEST ${best.value} 도전!';
+      wantedSpawnTiers.value = {};
+    } else {
+      stageNo.value = stage.stage;
+    }
     shots.value = stage.shots;
     _shotRegenT = (data['shotRegenT'] as num?)?.toDouble() ??
         GameConfig.shotRegenSec;

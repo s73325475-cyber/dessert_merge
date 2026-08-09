@@ -24,6 +24,7 @@ https://s73325475-cyber.github.io/dessert_merge/?mode=arcade
 
 📱 모바일 추천 · 세로 화면
 첫 화면에서 「탭하여 시작」을 누른 뒤 게임이 시작됩니다.
+(네이버·카카오 앱 안에서 안 열리면 ··· 메뉴 → Safari 또는 Chrome으로 열어 주세요)
 
 
 🎮 게임 방법

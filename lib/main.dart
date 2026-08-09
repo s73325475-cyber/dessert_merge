@@ -10,6 +10,7 @@ import 'app/app_release_config.dart';
 import 'app/web_launch_config.dart';
 import 'game/audio.dart';
 import 'game/config.dart';
+import 'game/game_run_mode.dart';
 import 'game/merge_game.dart';
 import 'game/store.dart';
 import 'ui/app_ui.dart';
@@ -70,8 +71,10 @@ class _DessertMergeAppState extends State<DessertMergeApp> {
       bool arcade = false}) async {
     final game = _ensureGame();
     if (arcade) {
-      widget.store.clearGameSession();
-      game.startArcadeRun();
+      if (fresh) {
+        widget.store.clearGameSession();
+        game.startArcadeRun();
+      }
     } else if (fresh) {
       widget.store.clearGameSession();
       game.restart();
@@ -121,7 +124,9 @@ class _DessertMergeAppState extends State<DessertMergeApp> {
     _webAutoLaunchDone = true;
     switch (target) {
       case WebLaunchTarget.arcade:
-        await _openGame(ctx, fresh: true, arcade: true);
+        final resumeArcade = widget.store.hasGameSave &&
+            widget.store.savedRunMode == GameRunMode.arcade;
+        await _openGame(ctx, fresh: !resumeArcade, arcade: true);
       case WebLaunchTarget.campaign:
         await _openGame(ctx, fresh: false);
       case WebLaunchTarget.menu:
@@ -1019,9 +1024,7 @@ class _GameOver extends StatelessWidget {
                     style: _btnStyle(const Color(0xfff5b945)),
                     onPressed: game.continueGame,
                     child: Text(
-                      game.stageShotsConsumed > 0
-                          ? '▶️ 계속하기 (광고 · 🚀${game.stageShotsConsumed} 회복)'
-                          : '▶️ 계속하기 (광고)',
+                      '▶️ 계속하기 (광고 · 🚀${GameConfig.adContinueShots} 회복)',
                       style: AppUi.button,
                       textAlign: TextAlign.center,
                     ),

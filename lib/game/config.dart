@@ -157,6 +157,8 @@ class GameConfig {
   static const int clearBonus = 100;
 
   static const int dangerShots = 3;
+  /// 광고 시청 후 게임 오버 부활 — 고정 지급 발사 수
+  static const int adContinueShots = 5;
 
   /// 모든 티어 공통 — 물리·렌더 동일 반경 (조준 혼동 방지)
   static const double dessertRadius = 2.1;

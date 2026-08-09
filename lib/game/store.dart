@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'daily_missions.dart';
+import 'game_run_mode.dart';
 
 // 코인 / 인벤토리 / 스킨·테마 / 영구 퍼크 영속 저장
 class Store {
@@ -223,6 +224,15 @@ class Store {
   }
 
   bool get hasGameSave => _prefs.getString(_gameKey) != null;
+
+  /// 저장된 판의 모드 (구버전 저장은 캠페인으로 간주)
+  GameRunMode? get savedRunMode {
+    final data = loadGameSession();
+    if (data == null) return null;
+    final name = data['runMode'] as String?;
+    if (name == null) return GameRunMode.campaign;
+    return GameRunMode.values.byName(name);
+  }
 
   Future<void> saveGameSession(Map<String, dynamic> data) async {
     await _prefs.setString(_gameKey, jsonEncode(data));
