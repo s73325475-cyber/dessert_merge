@@ -96,13 +96,16 @@ cd "C:\mini game_01\dessert_merge"
 .\deploy\configure-ads.ps1
 ```
 
-### 4-2. 필수 Secret
+### 4-2. GitHub Secret (선택)
 
-| Name | Value 예시 | 설명 |
-|------|------------|------|
-| `AD_PUBLISHER_ID` | `ca-pub-1234567890123456` | AdSense Publisher ID |
+Secret이 없어도 배포 워크플로가 기본 Publisher ID(`ca-pub-6205969955584117`, 페이지 meta와 동일)로 **테스트 광고 빌드**합니다.  
+다른 계정으로 바꿀 때만 Secret을 설정하세요.
 
-**New repository secret** → Name / Value 입력 → Add secret
+👉 https://github.com/s73325475-cyber/dessert_merge/settings/secrets/actions
+
+| Name | Value |
+|------|-------|
+| `AD_PUBLISHER_ID` | `ca-pub-6205969955584117` (다른 ID로 교체 시) |
 
 ### 4-3. Variable (테스트 ↔ 실광고 전환)
 

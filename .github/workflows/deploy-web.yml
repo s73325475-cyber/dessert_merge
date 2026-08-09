@@ -45,14 +45,12 @@ jobs:
           ADMOB_REWARDED_SLOT: ${{ secrets.ADMOB_REWARDED_SLOT }}
           ADMOB_INTERSTITIAL_SLOT: ${{ secrets.ADMOB_INTERSTITIAL_SLOT }}
         run: |
-          DARGS=""
-          if [ -n "$AD_PUBLISHER_ID" ]; then
-            DARGS="$DARGS --dart-define=AD_PUBLISHER_ID=$AD_PUBLISHER_ID"
-            if [ -n "$AD_TEST_MODE" ]; then
-              DARGS="$DARGS --dart-define=AD_TEST_MODE=$AD_TEST_MODE"
-            else
-              DARGS="$DARGS --dart-define=AD_TEST_MODE=true"
-            fi
+          # Publisher ID is public in page meta; default enables H5 test ads without GitHub Secret.
+          PUB_ID="${AD_PUBLISHER_ID:-ca-pub-6205969955584117}"
+          echo "Using AdSense publisher: ${PUB_ID}"
+          DARGS="--dart-define=AD_PUBLISHER_ID=${PUB_ID}"
+          if [ -n "$AD_TEST_MODE" ]; then
+            DARGS="$DARGS --dart-define=AD_TEST_MODE=$AD_TEST_MODE"
           else
             DARGS="$DARGS --dart-define=AD_TEST_MODE=true"
           fi
@@ -63,13 +61,7 @@ jobs:
             DARGS="$DARGS --dart-define=ADMOB_INTERSTITIAL_SLOT=$ADMOB_INTERSTITIAL_SLOT"
           fi
           flutter build web --release --wasm --base-href="/${{ github.event.repository.name }}/" $DARGS
-
-      - name: Generate ads.txt for AdSense
-        if: env.AD_PUBLISHER_ID != ''
-        env:
-          AD_PUBLISHER_ID: ${{ secrets.AD_PUBLISHER_ID }}
-        run: |
-          PUB="${AD_PUBLISHER_ID#ca-pub-}"
+          PUB="${PUB_ID#ca-pub-}"
           PUB="${PUB#pub-}"
           echo "google.com, pub-${PUB}, DIRECT, f08c47fec0942fa0" > build/web/ads.txt
           echo "Generated ads.txt:"
@@ -78,9 +70,8 @@ jobs:
       - name: Verify boot shell in built index
         run: grep -q 'data-shell' build/web/index.html && grep -q 'Chrome 앱에서 열기' build/web/index.html
 
-      - name: Verify ads.txt when publisher configured
-        if: secrets.AD_PUBLISHER_ID != ''
-        run: test -f build/web/ads.txt && grep -q 'google.com, pub-' build/web/ads.txt
+      - name: Verify ads.txt
+        run: test -f build/web/ads.txt && grep -q 'google.com, pub-6205969955584117' build/web/ads.txt
 
       - name: SPA fallback for GitHub Pages
         run: cp build/web/index.html build/web/404.html
