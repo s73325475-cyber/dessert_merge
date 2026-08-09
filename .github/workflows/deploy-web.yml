@@ -4,6 +4,16 @@ on:
   push:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      ad_test_mode:
+        description: 'AD_TEST_MODE override (empty = use repo variable or default)'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - ''
+          - 'true'
+          - 'false'
 
 permissions:
   contents: read
@@ -31,16 +41,18 @@ jobs:
       - name: Build web
         env:
           AD_PUBLISHER_ID: ${{ secrets.AD_PUBLISHER_ID }}
-          AD_TEST_MODE: ${{ vars.AD_TEST_MODE }}
+          AD_TEST_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.ad_test_mode != '' && inputs.ad_test_mode || vars.AD_TEST_MODE }}
           ADMOB_REWARDED_SLOT: ${{ secrets.ADMOB_REWARDED_SLOT }}
           ADMOB_INTERSTITIAL_SLOT: ${{ secrets.ADMOB_INTERSTITIAL_SLOT }}
         run: |
           DARGS=""
           if [ -n "$AD_PUBLISHER_ID" ]; then
             DARGS="$DARGS --dart-define=AD_PUBLISHER_ID=$AD_PUBLISHER_ID"
-          fi
-          if [ -n "$AD_TEST_MODE" ]; then
-            DARGS="$DARGS --dart-define=AD_TEST_MODE=$AD_TEST_MODE"
+            if [ -n "$AD_TEST_MODE" ]; then
+              DARGS="$DARGS --dart-define=AD_TEST_MODE=$AD_TEST_MODE"
+            else
+              DARGS="$DARGS --dart-define=AD_TEST_MODE=true"
+            fi
           else
             DARGS="$DARGS --dart-define=AD_TEST_MODE=true"
           fi
@@ -52,8 +64,23 @@ jobs:
           fi
           flutter build web --release --wasm --base-href="/${{ github.event.repository.name }}/" $DARGS
 
+      - name: Generate ads.txt for AdSense
+        if: env.AD_PUBLISHER_ID != ''
+        env:
+          AD_PUBLISHER_ID: ${{ secrets.AD_PUBLISHER_ID }}
+        run: |
+          PUB="${AD_PUBLISHER_ID#ca-pub-}"
+          PUB="${PUB#pub-}"
+          echo "google.com, pub-${PUB}, DIRECT, f08c47fec0942fa0" > build/web/ads.txt
+          echo "Generated ads.txt:"
+          cat build/web/ads.txt
+
       - name: Verify boot shell in built index
         run: grep -q 'data-shell' build/web/index.html && grep -q 'Chrome 앱에서 열기' build/web/index.html
+
+      - name: Verify ads.txt when publisher configured
+        if: secrets.AD_PUBLISHER_ID != ''
+        run: test -f build/web/ads.txt && grep -q 'google.com, pub-' build/web/ads.txt
 
       - name: SPA fallback for GitHub Pages
         run: cp build/web/index.html build/web/404.html

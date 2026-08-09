@@ -5,6 +5,7 @@
 ///
 /// H5 Games Ads 베타 승인 전에는 `AD_TEST_MODE=true` 로 테스트 광고 사용.
 /// 설정 방법: [deploy/ADS_SETUP.md](../../deploy/ADS_SETUP.md)
+/// Secret 등록 스크립트: `deploy/configure-ads.ps1`
 abstract final class AdConfig {
   /// AdSense Publisher ID (`ca-pub-…` 또는 숫자만)
   static const String publisherId = String.fromEnvironment(

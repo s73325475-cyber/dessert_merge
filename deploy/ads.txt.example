@@ -1,0 +1,6 @@
+# AdSense ads.txt 예시 — Publisher ID만 본인 것으로 교체
+# GitHub Actions 배포 시 AD_PUBLISHER_ID Secret이 있으면 자동 생성됩니다.
+#
+# 배포 URL: https://s73325475-cyber.github.io/dessert_merge/ads.txt
+
+google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0
