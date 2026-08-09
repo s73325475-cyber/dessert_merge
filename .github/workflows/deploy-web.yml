@@ -31,6 +31,9 @@ jobs:
       - name: Build web
         run: flutter build web --release --wasm --base-href="/${{ github.event.repository.name }}/"
 
+      - name: Verify boot shell in built index
+        run: grep -q 'data-shell' build/web/index.html && grep -q 'Chrome 앱에서 열기' build/web/index.html
+
       - name: SPA fallback for GitHub Pages
         run: cp build/web/index.html build/web/404.html
 

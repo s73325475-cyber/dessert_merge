@@ -6,6 +6,9 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="description" content="디저트를 쏴서 합치는 물리 기반 빌리어드 머지 게임. 모바일 세로 화면에 최적화.">
   <meta name="theme-color" content="#3d2a5c">
 
@@ -32,6 +35,35 @@
   <title>디저트 빌리어드 머지</title>
   <link rel="manifest" href="manifest.json">
 
+  <script>
+    (function () {
+      var ua = navigator.userAgent || '';
+      var params = new URLSearchParams(location.search);
+      var fromBlog = params.get('from') === 'blog' || params.get('from') === 'naver';
+      var refNaver = /naver\.com/i.test(document.referrer || '');
+      var mobile = window.innerWidth <= 820 ||
+        /Android|iPhone|iPad|iPod|Mobile|SamsungBrowser/i.test(ua);
+      var android = /Android/i.test(ua);
+      var inAppUa = /NAVER|KAKAOTALK|Instagram|Line\//i.test(ua);
+      var webView = /;\s*wv\)/.test(ua);
+      var androidChrome = android && !webView && !inAppUa &&
+        /Chrome\/[\d.]+ Mobile Safari\/[\d.]+/i.test(ua);
+      var iosSafari = /iPhone|iPad|iPod/i.test(ua) &&
+        /Safari/i.test(ua) && !inAppUa;
+
+      var shell = 'desktop';
+      if (!mobile) {
+        shell = 'desktop';
+      } else if (fromBlog || refNaver || inAppUa || webView ||
+          (android && !androidChrome) || (mobile && !iosSafari && !androidChrome)) {
+        shell = 'inapp';
+      } else {
+        shell = 'start';
+      }
+      document.documentElement.dataset.shell = shell;
+    })();
+  </script>
+
   <style>
     html, body {
       margin: 0;
@@ -51,7 +83,7 @@
     #start-screen, #inapp-screen, #boot-loader, #error-screen {
       position: fixed;
       inset: 0;
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -62,13 +94,13 @@
       box-sizing: border-box;
       text-align: center;
     }
-    #inapp-screen, #boot-loader, #error-screen { display: none; }
+    html[data-shell="start"] #start-screen,
+    html[data-shell="inapp"] #inapp-screen,
+    html[data-shell="desktop"] #boot-loader { display: flex; }
+    html[data-shell="loading"] #boot-loader { display: flex; }
+    html[data-shell="error"] #error-screen { display: flex; }
     #boot-loader { z-index: 9999; }
-    #boot-loader.hidden, #error-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.35s ease;
-    }
+    #boot-loader.hidden { opacity: 0; pointer-events: none; transition: opacity 0.35s ease; }
     .screen-emoji { font-size: 72px; line-height: 1; }
     .screen-title { font-size: 22px; font-weight: 800; margin: 0; }
     .screen-sub { font-size: 14px; opacity: 0.7; margin: 0; line-height: 1.5; max-width: 340px; }
@@ -87,7 +119,7 @@
       gap: 10px;
       width: min(100%, 320px);
     }
-    .btn-primary, .btn-secondary, #retry-btn {
+    .btn-primary, .btn-secondary {
       width: 100%;
       padding: 16px 20px;
       border: 0;
@@ -137,17 +169,14 @@
   </style>
 </head>
 <body>
-  <!-- 일반 모바일 / PC 시작 화면 -->
   <div id="start-screen">
     <div class="screen-emoji" aria-hidden="true">🍰</div>
     <h1 class="screen-title">디저트 빌리어드 머지</h1>
     <p class="screen-sub">디저트를 쏴서 합치는<br>물리 빌리어드 머지 게임</p>
     <div class="screen-badge" id="mode-badge">아케이드 모드</div>
     <button id="start-btn" class="btn-primary" type="button">▶  탭하여 시작</button>
-    <p class="screen-sub">세로 화면 · Wi-Fi/데이터 환경 권장<br>최초 실행 시 10~30초 걸릴 수 있어요</p>
   </div>
 
-  <!-- 네이버·카카오 등 앱 내 브라우저 -->
   <div id="inapp-screen">
     <div class="btn-row">
       <button id="open-browser-btn" class="btn-primary" type="button">🌐  Chrome 앱에서 열기</button>
@@ -173,27 +202,30 @@
 
   <script>
     (function () {
+      var BUILD = '20260809b';
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function (regs) {
           regs.forEach(function (reg) { reg.unregister(); });
         });
       }
 
+      var root = document.documentElement;
       var flutterStarted = false;
-      var startScreen = document.getElementById('start-screen');
-      var inappScreen = document.getElementById('inapp-screen');
       var bootLoader = document.getElementById('boot-loader');
-      var errorScreen = document.getElementById('error-screen');
-      var modeBadge = document.getElementById('mode-badge');
       var bootHint = document.getElementById('boot-hint');
       var copyToast = document.getElementById('copy-toast');
       var loadTimeoutId = null;
 
       var params = new URLSearchParams(location.search);
       var mode = (params.get('mode') || params.get('play') || 'arcade').toLowerCase();
+      var modeBadge = document.getElementById('mode-badge');
       if (modeBadge) {
         modeBadge.textContent = mode === 'campaign' ? '캠페인 모드'
           : mode === 'menu' ? '메인 메뉴' : '아케이드 모드';
+      }
+
+      function setShell(name) {
+        root.dataset.shell = name;
       }
 
       function gameUrl() {
@@ -204,50 +236,8 @@
         return url.toString();
       }
 
-      function isFromNaverBlog() {
-        var ref = document.referrer || '';
-        if (/naver\.com/i.test(ref)) return true;
-        var from = params.get('from') || '';
-        return from === 'blog' || from === 'naver';
-      }
-
-      function isAndroidWebView() {
-        var ua = navigator.userAgent || '';
-        if (!/Android/i.test(ua)) return false;
-        if (/;\s*wv\)/.test(ua)) return true;
-        if (/NAVER|KAKAOTALK|Instagram|Line\//i.test(ua)) return true;
-        // 앱 내 WebView: Chrome Mobile Safari 패턴이 없는 Android 브라우저
-        if (/AppleWebKit/i.test(ua) &&
-            !/Chrome\/[\d.]+ Mobile Safari\/[\d.]+/i.test(ua)) {
-          return true;
-        }
-        return false;
-      }
-
-      function getExternalBrowserReason() {
-        var inApp = detectInApp();
-        if (inApp) return inApp;
-        if (isFromNaverBlog()) return { kind: 'naver-blog', label: '네이버 블로그' };
-        if (isAndroidWebView()) return { kind: 'android-webview', label: '앱 내 브라우저' };
-        return null;
-      }
-
-      function isMobileLike() {
-        return window.innerWidth <= 820 ||
-          /Android|iPhone|iPad|iPod|Mobile|SamsungBrowser/i.test(navigator.userAgent);
-      }
-
-      function detectInApp() {
-        var ua = navigator.userAgent || '';
-        if (/NAVER/i.test(ua)) return { kind: 'naver', label: '네이버 앱' };
-        if (/KAKAOTALK/i.test(ua)) return { kind: 'kakao', label: '카카오톡' };
-        if (/Instagram/i.test(ua)) return { kind: 'instagram', label: '인스타그램' };
-        if (/Line\//i.test(ua)) return { kind: 'line', label: 'LINE' };
-        if (/FBAN|FBAV/i.test(ua)) return { kind: 'facebook', label: 'Facebook' };
-        if (/iPhone|iPad|iPod/i.test(ua) && !/Safari/i.test(ua)) {
-          return { kind: 'ios-inapp', label: '앱 내 브라우저' };
-        }
-        return null;
+      function isInAppShell() {
+        return root.dataset.shell === 'inapp';
       }
 
       function hasWebGL() {
@@ -306,7 +296,6 @@
           return;
         }
         copyGameLink();
-        showToast('Safari 앱을 연 뒤 주소창에 붙여넣기 해 주세요');
       }
 
       function markGateReady() {
@@ -316,36 +305,19 @@
         window.__dessertUserGesture = true;
       }
 
-      function hideAllScreens() {
-        if (startScreen) startScreen.style.display = 'none';
-        if (inappScreen) inappScreen.style.display = 'none';
-        if (bootLoader) bootLoader.style.display = 'none';
-        if (errorScreen) errorScreen.style.display = 'none';
-      }
-
-      function showInAppGuide() {
-        hideAllScreens();
-        if (inappScreen) inappScreen.style.display = 'flex';
-      }
-
       function showError() {
         if (loadTimeoutId) clearTimeout(loadTimeoutId);
-        hideAllScreens();
-        if (errorScreen) errorScreen.style.display = 'flex';
+        setShell('error');
       }
 
       function scheduleLoadTimeout() {
         if (loadTimeoutId) clearTimeout(loadTimeoutId);
-        loadTimeoutId = setTimeout(function () { showError(); }, 90000);
+        loadTimeoutId = setTimeout(showError, 90000);
       }
 
       function startFlutter() {
         if (flutterStarted) return;
-        var external = getExternalBrowserReason();
-        if (external && isMobileLike()) {
-          showInAppGuide();
-          return;
-        }
+        if (isInAppShell()) return;
         if (!hasWebGL()) {
           showError();
           return;
@@ -353,17 +325,13 @@
 
         flutterStarted = true;
         markGateReady();
-        hideAllScreens();
-        if (bootLoader) {
-          bootLoader.style.display = 'flex';
-          bootLoader.classList.remove('hidden');
-        }
+        setShell('loading');
         scheduleLoadTimeout();
 
         var s = document.createElement('script');
-        s.src = 'flutter_bootstrap.js';
+        s.src = 'flutter_bootstrap.js?v=' + BUILD;
         s.async = true;
-        s.onerror = function () { showError(); };
+        s.onerror = showError;
         document.body.appendChild(s);
       }
 
@@ -371,20 +339,17 @@
         if (loadTimeoutId) clearTimeout(loadTimeoutId);
         if (!bootLoader) return;
         bootLoader.classList.add('hidden');
-        setTimeout(function () { bootLoader.remove(); }, 400);
+        setTimeout(function () { bootLoader.remove(); setShell('game'); }, 400);
       });
 
       window.addEventListener('error', function (ev) {
-        if (!flutterStarted || !bootLoader || bootLoader.style.display === 'none') return;
+        if (!flutterStarted || root.dataset.shell !== 'loading') return;
         var msg = (ev && ev.message) ? String(ev.message) : '';
-        if (/wasm|webgl|canvaskit|skwasm|flutter/i.test(msg)) {
-          showError();
-        }
+        if (/wasm|webgl|canvaskit|skwasm|flutter/i.test(msg)) showError();
       });
 
       setTimeout(function () {
-        if (bootHint && bootLoader && bootLoader.style.display !== 'none' &&
-            !bootLoader.classList.contains('hidden')) {
+        if (bootHint && root.dataset.shell === 'loading') {
           bootHint.textContent = '최초 로딩은 10~30초 걸릴 수 있어요…';
         }
       }, 10000);
@@ -398,21 +363,13 @@
         el.addEventListener('click', fn);
       }
 
-      function openExternal() {
-        if (/Android/i.test(navigator.userAgent)) tryOpenExternalBrowser();
-        else copyGameLink();
-      }
-
       bindTap(document.getElementById('start-btn'), startFlutter);
       bindTap(document.getElementById('copy-link-btn'), copyGameLink);
-      bindTap(document.getElementById('open-browser-btn'), openExternal);
+      bindTap(document.getElementById('open-browser-btn'), tryOpenExternalBrowser);
       bindTap(document.getElementById('error-copy-btn'), copyGameLink);
-      bindTap(document.getElementById('open-browser-btn-error'), openExternal);
+      bindTap(document.getElementById('open-browser-btn-error'), tryOpenExternalBrowser);
 
-      var externalReason = getExternalBrowserReason();
-      if (externalReason && isMobileLike()) {
-        showInAppGuide();
-      } else if (!isMobileLike()) {
+      if (root.dataset.shell === 'desktop') {
         startFlutter();
       }
     })();
