@@ -22,9 +22,7 @@
 🍰 디저트 빌리어드 머지 — 플레이하기
 https://s73325475-cyber.github.io/dessert_merge/?mode=arcade&from=blog
 
-📱 Android · 네이버 블로그에서 연 경우
-앱 안에서는 세로 줄만 보이거나 실행이 안 됩니다. 반드시 Chrome 앱에서 열어 주세요.
-① 링크 복사 → ② Chrome 앱 → ③ 주소창 붙여넣기 → ④ 탭하여 시작
+📱 네이버 앱에서 연 경우 → 「Chrome 앱에서 열기」 또는 「링크 복사」
 
 
 🎮 게임 방법

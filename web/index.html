@@ -81,20 +81,6 @@
       font-size: 13px;
       color: #9ad0ec;
     }
-    .guide-box {
-      width: min(100%, 340px);
-      padding: 14px 16px;
-      border-radius: 14px;
-      background: rgba(0,0,0,0.28);
-      border: 1px solid rgba(255,255,255,0.12);
-      text-align: left;
-      font-size: 13px;
-      line-height: 1.65;
-      color: rgba(255,255,255,0.82);
-    }
-    .guide-box strong { color: #ffd6a5; }
-    .guide-box ol { margin: 8px 0 0; padding-left: 20px; }
-    .guide-box li { margin: 6px 0; }
     .btn-row {
       display: flex;
       flex-direction: column;
@@ -138,29 +124,7 @@
       transition: opacity 0.25s ease;
       z-index: 200000;
     }
-    .link-box {
-      width: min(100%, 340px);
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(154, 208, 236, 0.35);
-      background: rgba(0,0,0,0.35);
-      color: #9ad0ec;
-      font-size: 11px;
-      line-height: 1.4;
-      text-align: center;
-      word-break: break-all;
-    }
-    .warn-note {
-      width: min(100%, 340px);
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(255, 193, 7, 0.12);
-      border: 1px solid rgba(255, 193, 7, 0.28);
-      color: #ffe082;
-      font-size: 12px;
-      line-height: 1.55;
-      text-align: left;
-    }
+    #copy-toast.show { opacity: 1; }
     #boot-loader .spinner {
       width: 36px;
       height: 36px;
@@ -183,30 +147,12 @@
     <p class="screen-sub">세로 화면 · Wi-Fi/데이터 환경 권장<br>최초 실행 시 10~30초 걸릴 수 있어요</p>
   </div>
 
-  <!-- 네이버·카카오 등 앱 내 브라우저 전용 안내 -->
+  <!-- 네이버·카카오 등 앱 내 브라우저 -->
   <div id="inapp-screen">
-    <div class="screen-emoji" aria-hidden="true">📱</div>
-    <h1 class="screen-title">외부 브라우저 필요</h1>
-    <p class="screen-sub" id="inapp-reason">네이버·카카오 앱 안에서는<br>게임이 실행되지 않습니다.</p>
-    <div class="warn-note" id="inapp-broken-note">
-      <strong>세로 줄 2개만 보이나요?</strong><br>
-      앱 안 브라우저에서 그래픽이 깨진 상태예요. 아래 방법으로 <strong>Chrome 앱</strong>에서 열어야 합니다.
-    </div>
-    <div class="guide-box" id="inapp-steps">
-      <strong>Android · Chrome에서 여는 방법</strong>
-      <ol>
-        <li><strong>「📋 링크 복사」</strong> 또는 아래 주소 길게 눌러 복사</li>
-        <li>홈 화면에서 <strong>Chrome</strong> 앱 실행</li>
-        <li>상단 <strong>주소창</strong> 길게 눌러 <strong>붙여넣기</strong> → 이동</li>
-        <li><strong>「▶ 탭하여 시작」</strong> → 10~30초 대기</li>
-      </ol>
-    </div>
-    <input id="link-box" class="link-box" readonly aria-label="게임 주소">
     <div class="btn-row">
-      <button id="copy-link-btn" class="btn-primary" type="button">📋  링크 복사</button>
-      <button id="open-browser-btn" class="btn-secondary" type="button">🌐  Chrome에서 열기</button>
+      <button id="open-browser-btn" class="btn-primary" type="button">🌐  Chrome 앱에서 열기</button>
+      <button id="copy-link-btn" class="btn-secondary" type="button">📋  링크 복사</button>
     </div>
-    <p class="screen-sub" id="copy-hint">복사 후 Chrome/Safari 주소창에 붙여넣으세요</p>
   </div>
 
   <div id="boot-loader" aria-live="polite" aria-busy="true">
@@ -217,12 +163,9 @@
   </div>
 
   <div id="error-screen" role="alert">
-    <div class="screen-emoji" aria-hidden="true">⚠️</div>
-    <div class="screen-title">불러오기 실패</div>
-    <p class="screen-sub" id="error-msg">네트워크 또는 브라우저 호환 문제일 수 있어요.</p>
     <div class="btn-row">
-      <button id="error-copy-btn" class="btn-primary" type="button">📋  링크 복사 후 Chrome/Safari에서 열기</button>
-      <button id="retry-btn" class="btn-secondary" type="button">다시 시도</button>
+      <button id="open-browser-btn-error" class="btn-primary" type="button">🌐  Chrome 앱에서 열기</button>
+      <button id="error-copy-btn" class="btn-secondary" type="button">📋  링크 복사</button>
     </div>
   </div>
 
@@ -241,11 +184,9 @@
       var inappScreen = document.getElementById('inapp-screen');
       var bootLoader = document.getElementById('boot-loader');
       var errorScreen = document.getElementById('error-screen');
-      var errorMsg = document.getElementById('error-msg');
       var modeBadge = document.getElementById('mode-badge');
       var bootHint = document.getElementById('boot-hint');
       var copyToast = document.getElementById('copy-toast');
-      var openBrowserBtn = document.getElementById('open-browser-btn');
       var loadTimeoutId = null;
 
       var params = new URLSearchParams(location.search);
@@ -329,7 +270,7 @@
       function copyGameLink() {
         var link = gameUrl();
         function done(ok) {
-          showToast(ok ? '링크가 복사되었어요! Chrome/Safari 주소창에 붙여넣기' : '복사 실패 — 아래 주소를 직접 입력: ' + link);
+          showToast(ok ? '링크가 복사되었어요!' : '복사에 실패했어요');
         }
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(link).then(function () { done(true); }).catch(fallbackCopy);
@@ -382,53 +323,31 @@
         if (errorScreen) errorScreen.style.display = 'none';
       }
 
-      function showInAppGuide(info) {
+      function showInAppGuide() {
         hideAllScreens();
         if (inappScreen) inappScreen.style.display = 'flex';
-        var reason = document.getElementById('inapp-reason');
-        if (reason) {
-          reason.innerHTML = (info.label || '앱') + ' 안에서는<br>게임이 제대로 실행되지 않습니다.';
-        }
-        var linkBox = document.getElementById('link-box');
-        if (linkBox) {
-          linkBox.value = gameUrl();
-        }
-        if (openBrowserBtn) {
-          if (/Android/i.test(navigator.userAgent)) {
-            openBrowserBtn.style.display = 'block';
-            openBrowserBtn.textContent = '🌐  Chrome 앱에서 열기';
-          } else {
-            openBrowserBtn.style.display = 'block';
-            openBrowserBtn.textContent = '📋  링크 복사 (Safari용)';
-          }
-        }
       }
 
-      function showError(message) {
+      function showError() {
         if (loadTimeoutId) clearTimeout(loadTimeoutId);
         hideAllScreens();
-        if (errorMsg) errorMsg.textContent = message;
         if (errorScreen) errorScreen.style.display = 'flex';
       }
 
       function scheduleLoadTimeout() {
         if (loadTimeoutId) clearTimeout(loadTimeoutId);
-        loadTimeoutId = setTimeout(function () {
-          showError(
-            '로딩이 너무 오래 걸립니다. 아래 「링크 복사」 후 Chrome 또는 Safari에서 열어 주세요.'
-          );
-        }, 90000);
+        loadTimeoutId = setTimeout(function () { showError(); }, 90000);
       }
 
       function startFlutter() {
         if (flutterStarted) return;
         var external = getExternalBrowserReason();
         if (external && isMobileLike()) {
-          showInAppGuide(external);
+          showInAppGuide();
           return;
         }
         if (!hasWebGL()) {
-          showError('WebGL(게임 그래픽)을 지원하지 않는 브라우저예요. Chrome 또는 Safari에서 열어 주세요.');
+          showError();
           return;
         }
 
@@ -444,9 +363,7 @@
         var s = document.createElement('script');
         s.src = 'flutter_bootstrap.js';
         s.async = true;
-        s.onerror = function () {
-          showError('게임 파일을 불러오지 못했어요. 링크를 복사해 Chrome/Safari에서 다시 열어 주세요.');
-        };
+        s.onerror = function () { showError(); };
         document.body.appendChild(s);
       }
 
@@ -461,7 +378,7 @@
         if (!flutterStarted || !bootLoader || bootLoader.style.display === 'none') return;
         var msg = (ev && ev.message) ? String(ev.message) : '';
         if (/wasm|webgl|canvaskit|skwasm|flutter/i.test(msg)) {
-          showError('그래픽 엔진 로딩에 실패했어요. 링크를 복사해 Chrome/Safari에서 열어 주세요.');
+          showError();
         }
       });
 
@@ -481,26 +398,20 @@
         el.addEventListener('click', fn);
       }
 
-      bindTap(document.getElementById('start-btn'), startFlutter);
-      bindTap(document.getElementById('copy-link-btn'), copyGameLink);
-      var linkBox = document.getElementById('link-box');
-      if (linkBox) {
-        linkBox.addEventListener('focus', function () { linkBox.select(); });
-        bindTap(linkBox, function () { linkBox.select(); copyGameLink(); });
-      }
-      bindTap(document.getElementById('open-browser-btn'), function () {
+      function openExternal() {
         if (/Android/i.test(navigator.userAgent)) tryOpenExternalBrowser();
         else copyGameLink();
-      });
+      }
+
+      bindTap(document.getElementById('start-btn'), startFlutter);
+      bindTap(document.getElementById('copy-link-btn'), copyGameLink);
+      bindTap(document.getElementById('open-browser-btn'), openExternal);
       bindTap(document.getElementById('error-copy-btn'), copyGameLink);
-      bindTap(document.getElementById('retry-btn'), function () {
-        flutterStarted = false;
-        location.reload();
-      });
+      bindTap(document.getElementById('open-browser-btn-error'), openExternal);
 
       var externalReason = getExternalBrowserReason();
       if (externalReason && isMobileLike()) {
-        showInAppGuide(externalReason);
+        showInAppGuide();
       } else if (!isMobileLike()) {
         startFlutter();
       }
