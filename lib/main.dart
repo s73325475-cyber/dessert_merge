@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app_release_config.dart';
 import 'app/web_launch_config.dart';
+import 'game/ads.dart';
 import 'game/audio.dart';
 import 'game/config.dart';
 import 'game/game_run_mode.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
     GoogleFonts.config.allowRuntimeFetching = false;
+    await initAds();
   }
   final prefs = await SharedPreferences.getInstance();
   final store = Store(prefs);

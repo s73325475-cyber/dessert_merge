@@ -29,7 +29,28 @@ jobs:
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release --wasm --base-href="/${{ github.event.repository.name }}/"
+        env:
+          AD_PUBLISHER_ID: ${{ secrets.AD_PUBLISHER_ID }}
+          AD_TEST_MODE: ${{ vars.AD_TEST_MODE }}
+          ADMOB_REWARDED_SLOT: ${{ secrets.ADMOB_REWARDED_SLOT }}
+          ADMOB_INTERSTITIAL_SLOT: ${{ secrets.ADMOB_INTERSTITIAL_SLOT }}
+        run: |
+          DARGS=""
+          if [ -n "$AD_PUBLISHER_ID" ]; then
+            DARGS="$DARGS --dart-define=AD_PUBLISHER_ID=$AD_PUBLISHER_ID"
+          fi
+          if [ -n "$AD_TEST_MODE" ]; then
+            DARGS="$DARGS --dart-define=AD_TEST_MODE=$AD_TEST_MODE"
+          else
+            DARGS="$DARGS --dart-define=AD_TEST_MODE=true"
+          fi
+          if [ -n "$ADMOB_REWARDED_SLOT" ]; then
+            DARGS="$DARGS --dart-define=ADMOB_REWARDED_SLOT=$ADMOB_REWARDED_SLOT"
+          fi
+          if [ -n "$ADMOB_INTERSTITIAL_SLOT" ]; then
+            DARGS="$DARGS --dart-define=ADMOB_INTERSTITIAL_SLOT=$ADMOB_INTERSTITIAL_SLOT"
+          fi
+          flutter build web --release --wasm --base-href="/${{ github.event.repository.name }}/" $DARGS
 
       - name: Verify boot shell in built index
         run: grep -q 'data-shell' build/web/index.html && grep -q 'Chrome 앱에서 열기' build/web/index.html

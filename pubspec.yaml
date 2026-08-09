@@ -28,6 +28,7 @@ dependencies:
   package_info_plus: ^8.3.0
   http: ^1.4.0
   path_provider: ^2.1.5
+  google_adsense: ^0.1.2
 
 dev_dependencies:
   flutter_test:

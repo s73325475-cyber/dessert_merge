@@ -1,15 +1,15 @@
-// 보상형 광고 인터페이스(stub). 지금은 짧은 대기 후 보상.
-// 추후 실제 광고 SDK 연동 시 이 함수 내부만 교체.
+// 보상형 광고 — 웹: Google H5 Games Ads, 그 외: stub.
+import 'ads_stub.dart' if (dart.library.js_interop) 'ads_web.dart' as platform;
+
+Future<void> initAds() => platform.initAds();
+
 Future<void> showRewardedAd(
   void Function() onReward, {
   void Function()? onFail,
   void Function()? onStart,
-}) async {
-  try {
-    onStart?.call();
-    await Future<void>.delayed(const Duration(milliseconds: 1200));
-    onReward();
-  } catch (_) {
-    onFail?.call();
-  }
-}
+}) =>
+    platform.showRewardedAd(
+      onReward,
+      onFail: onFail,
+      onStart: onStart,
+    );
