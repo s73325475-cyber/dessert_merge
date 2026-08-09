@@ -1,0 +1,7 @@
+{
+  "version": "1.0.1",
+  "buildNumber": 2,
+  "apkUrl": "https://your-server.example.com/releases/dessert_merge-1.0.1.apk",
+  "releaseNotes": "· 버그 수정\n· 밸런스 조정",
+  "forceUpdate": false
+}

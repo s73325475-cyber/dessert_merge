@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="디저트를 쏴서 합치는 물리 기반 빌리어드 머지 게임. 모바일 세로 화면에 최적화.">
+  <meta name="theme-color" content="#3d2a5c">
+
+  <!-- Open Graph (GitHub Pages 배포 후 og:url을 실제 URL로 교체) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="디저트 빌리어드 머지">
+  <meta property="og:description" content="디저트를 쏴서 합치는 물리 기반 빌리어드 머지 게임. 모바일 세로 화면 최적화.">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:image" content="https://s73325475-cyber.github.io/dessert_merge/og-thumbnail.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="675">
+  <meta property="og:url" content="https://s73325475-cyber.github.io/dessert_merge/?mode=arcade">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="디저트 빌리어드 머지">
+  <meta name="twitter:description" content="디저트를 쏴서 합치는 물리 기반 빌리어드 머지 게임">
+  <meta name="twitter:image" content="https://s73325475-cyber.github.io/dessert_merge/og-thumbnail.png">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="디저트 머지">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>디저트 빌리어드 머지</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: linear-gradient(180deg, #3d2a5c 0%, #1a1028 100%);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+    #boot-loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 9999;
+      transition: opacity 0.35s ease;
+    }
+    #boot-loader.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #boot-loader .emoji { font-size: 64px; }
+    #boot-loader .title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    #boot-loader .hint {
+      font-size: 13px;
+      opacity: 0.65;
+    }
+    #boot-loader .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: #f5b945;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="boot-loader" aria-live="polite" aria-busy="true">
+    <div class="emoji" aria-hidden="true">🍰</div>
+    <div class="title">디저트 빌리어드 머지</div>
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="hint">게임을 불러오는 중…</div>
+  </div>
+
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var loader = document.getElementById('boot-loader');
+      if (loader) {
+        loader.classList.add('hidden');
+        setTimeout(function () { loader.remove(); }, 400);
+      }
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
