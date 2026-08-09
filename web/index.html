@@ -38,6 +38,7 @@
       padding: 0;
       width: 100%;
       height: 100%;
+      min-height: 100vh;
       min-height: 100dvh;
       background: #120a1c;
       color: #fff;
@@ -46,34 +47,46 @@
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
-    #boot-loader {
+    #start-screen, #boot-loader {
       position: fixed;
       inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      z-index: 9999;
+      gap: 14px;
+      z-index: 100000;
       background: linear-gradient(180deg, #3d2a5c 0%, #1a1028 100%);
-      transition: opacity 0.35s ease;
-    }
-    #boot-loader.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    #boot-loader .emoji { font-size: 64px; }
-    #boot-loader .title {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-    #boot-loader .hint {
-      font-size: 13px;
-      opacity: 0.65;
+      padding: 24px;
+      box-sizing: border-box;
       text-align: center;
-      padding: 0 24px;
-      line-height: 1.5;
+    }
+    #boot-loader { display: none; z-index: 9999; }
+    #boot-loader.hidden { opacity: 0; pointer-events: none; transition: opacity 0.35s ease; }
+    .screen-emoji { font-size: 72px; line-height: 1; }
+    .screen-title { font-size: 22px; font-weight: 800; margin: 0; }
+    .screen-sub { font-size: 14px; opacity: 0.7; margin: 0; line-height: 1.5; }
+    .screen-badge {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 13px;
+      color: #9ad0ec;
+    }
+    #start-btn {
+      margin-top: 8px;
+      width: min(100%, 320px);
+      padding: 18px 24px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #f5c842 0%, #f5b945 100%);
+      color: #2c1f43;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(245,185,69,0.35);
     }
     #boot-loader .spinner {
       width: 36px;
@@ -87,36 +100,95 @@
   </style>
 </head>
 <body>
+  <!-- 모바일: Flutter 로드 전 순수 HTML 시작 화면 -->
+  <div id="start-screen">
+    <div class="screen-emoji" aria-hidden="true">🍰</div>
+    <h1 class="screen-title">디저트 빌리어드 머지</h1>
+    <p class="screen-sub">디저트를 쏴서 합치는<br>물리 빌리어드 머지 게임</p>
+    <div class="screen-badge" id="mode-badge">아케이드 모드</div>
+    <button id="start-btn" type="button">▶  탭하여 시작</button>
+    <p class="screen-sub">세로 화면 · Wi-Fi/데이터 환경 권장</p>
+  </div>
+
   <div id="boot-loader" aria-live="polite" aria-busy="true">
-    <div class="emoji" aria-hidden="true">🍰</div>
-    <div class="title">디저트 빌리어드 머지</div>
+    <div class="screen-emoji" aria-hidden="true">🍰</div>
+    <div class="screen-title">디저트 빌리어드 머지</div>
     <div class="spinner" aria-hidden="true"></div>
-    <div class="hint" id="boot-hint">게임을 불러오는 중…</div>
+    <p class="screen-sub" id="boot-hint">게임을 불러오는 중…</p>
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function (regs) {
-        regs.forEach(function (reg) { reg.unregister(); });
+    (function () {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (reg) { reg.unregister(); });
+        });
+      }
+
+      var flutterStarted = false;
+      var startScreen = document.getElementById('start-screen');
+      var bootLoader = document.getElementById('boot-loader');
+      var modeBadge = document.getElementById('mode-badge');
+      var bootHint = document.getElementById('boot-hint');
+
+      var params = new URLSearchParams(location.search);
+      var mode = (params.get('mode') || params.get('play') || 'arcade').toLowerCase();
+      if (modeBadge) {
+        modeBadge.textContent = mode === 'campaign' ? '캠페인 모드'
+          : mode === 'menu' ? '메인 메뉴' : '아케이드 모드';
+      }
+
+      function isMobileLike() {
+        return window.innerWidth <= 768 ||
+          /Android|iPhone|iPad|iPod|Mobile|SamsungBrowser/i.test(navigator.userAgent);
+      }
+
+      function markGateReady() {
+        var url = new URL(location.href);
+        url.searchParams.set('gate', '0');
+        history.replaceState(null, '', url.toString());
+        window.__dessertUserGesture = true;
+      }
+
+      function startFlutter() {
+        if (flutterStarted) return;
+        flutterStarted = true;
+        markGateReady();
+        if (startScreen) startScreen.remove();
+        if (bootLoader) bootLoader.style.display = 'flex';
+
+        var s = document.createElement('script');
+        s.src = 'flutter_bootstrap.js';
+        s.async = true;
+        document.body.appendChild(s);
+      }
+
+      window.addEventListener('flutter-first-frame', function () {
+        if (!bootLoader) return;
+        bootLoader.classList.add('hidden');
+        setTimeout(function () { bootLoader.remove(); }, 400);
       });
-    }
 
-    window.addEventListener('flutter-first-frame', function () {
-      var loader = document.getElementById('boot-loader');
-      if (loader) {
-        loader.classList.add('hidden');
-        setTimeout(function () { loader.remove(); }, 400);
-      }
-    });
+      setTimeout(function () {
+        if (bootHint && bootLoader && bootLoader.style.display !== 'none' &&
+            !bootLoader.classList.contains('hidden')) {
+          bootHint.textContent = '최초 로딩은 10~30초 걸릴 수 있어요…';
+        }
+      }, 10000);
 
-    setTimeout(function () {
-      var hint = document.getElementById('boot-hint');
-      var loader = document.getElementById('boot-loader');
-      if (hint && loader && !loader.classList.contains('hidden')) {
-        hint.textContent = '최초 로딩은 10~30초 걸릴 수 있어요…';
+      var startBtn = document.getElementById('start-btn');
+      if (startBtn) {
+        startBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          startFlutter();
+        });
       }
-    }, 10000);
+
+      // PC는 바로 로드, 모바일은 시작 버튼 필요
+      if (!isMobileLike()) {
+        startFlutter();
+      }
+    })();
   </script>
-  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

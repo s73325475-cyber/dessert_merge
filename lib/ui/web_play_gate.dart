@@ -50,64 +50,78 @@ class _WebPlayGateState extends State<WebPlayGate> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
-                const Text('🍰', style: TextStyle(fontSize: 88)),
-                const SizedBox(height: 12),
-                Text(
-                  AppReleaseConfig.appName,
-                  style: AppUi.display.copyWith(fontSize: 26),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '디저트를 쏴서 합치는 빌리어드 머지',
-                  style: AppUi.dim.copyWith(fontSize: 14, color: Colors.white60),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 28),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: AppUi.hudPanel(radius: 999),
-                  child: Text(
-                    modeHint,
-                    style: AppUi.label.copyWith(color: const Color(0xff9ad0ec)),
-                  ),
-                ),
-                const Spacer(flex: 3),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xfff5b945),
-                      foregroundColor: const Color(0xff2c1f43),
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: const StadiumBorder(),
-                      elevation: 4,
-                    ),
-                    onPressed: _starting ? null : _start,
-                    child: Text(
-                      _starting ? '불러오는 중…' : '▶  탭하여 시작',
-                      style: AppUi.button.copyWith(
-                        fontSize: 18,
-                        color: const Color(0xff2c1f43),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('🍰', style: TextStyle(fontSize: 88)),
+                      const SizedBox(height: 12),
+                      Text(
+                        AppReleaseConfig.appName,
+                        style: AppUi.display.copyWith(fontSize: 26),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '디저트를 쏴서 합치는 빌리어드 머지',
+                        style: AppUi.dim.copyWith(
+                          fontSize: 14,
+                          color: Colors.white60,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 28),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: AppUi.hudPanel(radius: 999),
+                        child: Text(
+                          modeHint,
+                          style: AppUi.label.copyWith(color: const Color(0xff9ad0ec)),
+                        ),
+                      ),
+                      const SizedBox(height: 36),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xfff5b945),
+                            foregroundColor: const Color(0xff2c1f43),
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: const StadiumBorder(),
+                            elevation: 4,
+                          ),
+                          onPressed: _starting ? null : _start,
+                          child: Text(
+                            _starting ? '불러오는 중…' : '▶  탭하여 시작',
+                            style: AppUi.button.copyWith(
+                              fontSize: 18,
+                              color: const Color(0xff2c1f43),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '화면을 가로로 두면 조작이 불편할 수 있어요',
+                        style: AppUi.dim.copyWith(
+                          fontSize: 12,
+                          color: Colors.white38,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  '화면을 가로로 두면 조작이 불편할 수 있어요',
-                  style: AppUi.dim.copyWith(fontSize: 12, color: Colors.white38),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),

@@ -44,6 +44,17 @@ class _DessertMergeAppState extends State<DessertMergeApp> {
   bool _webGatePassed = !kIsWeb || !WebLaunchConfig.needsPlayGate;
   bool _webAutoLaunchDone = false;
 
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb && _webGatePassed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await widget.audio.unlockForWeb();
+        if (mounted) _maybeAutoLaunchWeb();
+      });
+    }
+  }
+
   bool get _hasSavedGame =>
       widget.store.hasGameSave || _sessionGame != null;
 
@@ -95,6 +106,7 @@ class _DessertMergeAppState extends State<DessertMergeApp> {
 
   void _onWebGateComplete() {
     setState(() => _webGatePassed = true);
+    widget.audio.unlockForWeb();
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoLaunchWeb());
   }
 
