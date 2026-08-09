@@ -20,12 +20,11 @@
 아래 링크를 누르면 모바일·PC 브라우저에서 바로 플레이할 수 있습니다.
 
 🍰 디저트 빌리어드 머지 — 플레이하기
-https://s73325475-cyber.github.io/dessert_merge/?mode=arcade
+https://s73325475-cyber.github.io/dessert_merge/?mode=arcade&from=blog
 
-📱 모바일 추천 · 세로 화면
-네이버·카카오 앱 안에서는 실행되지 않습니다.
-① 아래 링크 복사 → ② Chrome 또는 Safari 앱 → ③ 주소창에 붙여넣기
-(블로그에서 연 경우: 링크 길게 눌러 복사 후 Safari/Chrome에서 열기)
+📱 Android · 네이버 블로그에서 연 경우
+앱 안에서는 세로 줄만 보이거나 실행이 안 됩니다. 반드시 Chrome 앱에서 열어 주세요.
+① 링크 복사 → ② Chrome 앱 → ③ 주소창 붙여넣기 → ④ 탭하여 시작
 
 
 🎮 게임 방법

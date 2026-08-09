@@ -16,7 +16,7 @@
   <meta property="og:image" content="https://s73325475-cyber.github.io/dessert_merge/og-thumbnail.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="675">
-  <meta property="og:url" content="https://s73325475-cyber.github.io/dessert_merge/?mode=arcade">
+  <meta property="og:url" content="https://s73325475-cyber.github.io/dessert_merge/?mode=arcade&from=blog">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="디저트 빌리어드 머지">
   <meta name="twitter:description" content="디저트를 쏴서 합치는 물리 기반 빌리어드 머지 게임">
@@ -138,7 +138,29 @@
       transition: opacity 0.25s ease;
       z-index: 200000;
     }
-    #copy-toast.show { opacity: 1; }
+    .link-box {
+      width: min(100%, 340px);
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(154, 208, 236, 0.35);
+      background: rgba(0,0,0,0.35);
+      color: #9ad0ec;
+      font-size: 11px;
+      line-height: 1.4;
+      text-align: center;
+      word-break: break-all;
+    }
+    .warn-note {
+      width: min(100%, 340px);
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 193, 7, 0.12);
+      border: 1px solid rgba(255, 193, 7, 0.28);
+      color: #ffe082;
+      font-size: 12px;
+      line-height: 1.55;
+      text-align: left;
+    }
     #boot-loader .spinner {
       width: 36px;
       height: 36px;
@@ -166,14 +188,20 @@
     <div class="screen-emoji" aria-hidden="true">📱</div>
     <h1 class="screen-title">외부 브라우저 필요</h1>
     <p class="screen-sub" id="inapp-reason">네이버·카카오 앱 안에서는<br>게임이 실행되지 않습니다.</p>
+    <div class="warn-note" id="inapp-broken-note">
+      <strong>세로 줄 2개만 보이나요?</strong><br>
+      앱 안 브라우저에서 그래픽이 깨진 상태예요. 아래 방법으로 <strong>Chrome 앱</strong>에서 열어야 합니다.
+    </div>
     <div class="guide-box" id="inapp-steps">
-      <strong>이렇게 열어 주세요</strong>
+      <strong>Android · Chrome에서 여는 방법</strong>
       <ol>
-        <li>아래 <strong>「링크 복사」</strong> 버튼 탭</li>
-        <li>휴대폰의 <strong>Chrome</strong> 또는 <strong>Safari</strong> 앱 실행</li>
-        <li>주소창을 길게 눌러 <strong>붙여넣기</strong> 후 이동</li>
+        <li><strong>「📋 링크 복사」</strong> 또는 아래 주소 길게 눌러 복사</li>
+        <li>홈 화면에서 <strong>Chrome</strong> 앱 실행</li>
+        <li>상단 <strong>주소창</strong> 길게 눌러 <strong>붙여넣기</strong> → 이동</li>
+        <li><strong>「▶ 탭하여 시작」</strong> → 10~30초 대기</li>
       </ol>
     </div>
+    <input id="link-box" class="link-box" readonly aria-label="게임 주소">
     <div class="btn-row">
       <button id="copy-link-btn" class="btn-primary" type="button">📋  링크 복사</button>
       <button id="open-browser-btn" class="btn-secondary" type="button">🌐  Chrome에서 열기</button>
@@ -231,7 +259,36 @@
         var url = new URL(location.href);
         url.searchParams.set('mode', mode === 'menu' || mode === 'campaign' ? mode : 'arcade');
         url.searchParams.set('gate', '0');
+        url.searchParams.delete('from');
         return url.toString();
+      }
+
+      function isFromNaverBlog() {
+        var ref = document.referrer || '';
+        if (/naver\.com/i.test(ref)) return true;
+        var from = params.get('from') || '';
+        return from === 'blog' || from === 'naver';
+      }
+
+      function isAndroidWebView() {
+        var ua = navigator.userAgent || '';
+        if (!/Android/i.test(ua)) return false;
+        if (/;\s*wv\)/.test(ua)) return true;
+        if (/NAVER|KAKAOTALK|Instagram|Line\//i.test(ua)) return true;
+        // 앱 내 WebView: Chrome Mobile Safari 패턴이 없는 Android 브라우저
+        if (/AppleWebKit/i.test(ua) &&
+            !/Chrome\/[\d.]+ Mobile Safari\/[\d.]+/i.test(ua)) {
+          return true;
+        }
+        return false;
+      }
+
+      function getExternalBrowserReason() {
+        var inApp = detectInApp();
+        if (inApp) return inApp;
+        if (isFromNaverBlog()) return { kind: 'naver-blog', label: '네이버 블로그' };
+        if (isAndroidWebView()) return { kind: 'android-webview', label: '앱 내 브라우저' };
+        return null;
       }
 
       function isMobileLike() {
@@ -330,12 +387,16 @@
         if (inappScreen) inappScreen.style.display = 'flex';
         var reason = document.getElementById('inapp-reason');
         if (reason) {
-          reason.innerHTML = (info.label || '앱') + ' 안에서는<br>게임이 실행되지 않습니다.';
+          reason.innerHTML = (info.label || '앱') + ' 안에서는<br>게임이 제대로 실행되지 않습니다.';
+        }
+        var linkBox = document.getElementById('link-box');
+        if (linkBox) {
+          linkBox.value = gameUrl();
         }
         if (openBrowserBtn) {
           if (/Android/i.test(navigator.userAgent)) {
             openBrowserBtn.style.display = 'block';
-            openBrowserBtn.textContent = '🌐  Chrome에서 열기';
+            openBrowserBtn.textContent = '🌐  Chrome 앱에서 열기';
           } else {
             openBrowserBtn.style.display = 'block';
             openBrowserBtn.textContent = '📋  링크 복사 (Safari용)';
@@ -361,8 +422,9 @@
 
       function startFlutter() {
         if (flutterStarted) return;
-        if (detectInApp()) {
-          showInAppGuide(detectInApp());
+        var external = getExternalBrowserReason();
+        if (external && isMobileLike()) {
+          showInAppGuide(external);
           return;
         }
         if (!hasWebGL()) {
@@ -421,6 +483,11 @@
 
       bindTap(document.getElementById('start-btn'), startFlutter);
       bindTap(document.getElementById('copy-link-btn'), copyGameLink);
+      var linkBox = document.getElementById('link-box');
+      if (linkBox) {
+        linkBox.addEventListener('focus', function () { linkBox.select(); });
+        bindTap(linkBox, function () { linkBox.select(); copyGameLink(); });
+      }
       bindTap(document.getElementById('open-browser-btn'), function () {
         if (/Android/i.test(navigator.userAgent)) tryOpenExternalBrowser();
         else copyGameLink();
@@ -431,9 +498,9 @@
         location.reload();
       });
 
-      var inApp = detectInApp();
-      if (inApp && isMobileLike()) {
-        showInAppGuide(inApp);
+      var externalReason = getExternalBrowserReason();
+      if (externalReason && isMobileLike()) {
+        showInAppGuide(externalReason);
       } else if (!isMobileLike()) {
         startFlutter();
       }
