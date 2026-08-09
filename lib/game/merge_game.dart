@@ -211,6 +211,7 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
 
   double? _graceTimer;
   int _shotsConsumedThisStage = 0;
+  bool _adContinuePending = false;
   /// 이번 스테이지에서 소모한 발사 횟수 (통계용)
   int get stageShotsConsumed => _shotsConsumedThisStage;
   int get adContinueRewardShots => GameConfig.adContinueShots;
@@ -1496,24 +1497,33 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
   }
 
   void continueGame() {
-    if (status.value != 'over') return;
-    showRewardedAd(_resumeAfterAdContinue);
+    if (status.value != 'over' || _adContinuePending) return;
+    _adContinuePending = true;
+    showRewardedAd(
+      _resumeAfterAdContinue,
+      onFail: () => _adContinuePending = false,
+    );
   }
 
   void _resumeAfterAdContinue() {
+    if (status.value != 'over') {
+      _adContinuePending = false;
+      return;
+    }
     final grant = GameConfig.adContinueShots;
-    stage.grantShots(grant);
+    stage.shots = grant;
     status.value = 'playing';
     _graceTimer = null;
     _resetBossGimmicks();
     _touchPos = null;
     _aimFired = false;
     blocked = false;
-    shots.value = stage.shots;
+    shots.value = grant;
     _resetStageShotCounter();
     _showBonus('▶️ +$grant 🚀');
     audio.stageStart();
     persistSession();
+    _adContinuePending = false;
   }
 
   void restart() {

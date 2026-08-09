@@ -157,6 +157,32 @@
       z-index: 200000;
     }
     #copy-toast.show { opacity: 1; }
+    .link-field {
+      display: none;
+      width: min(100%, 320px);
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(154, 208, 236, 0.35);
+      background: rgba(0,0,0,0.35);
+      color: #9ad0ec;
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+      word-break: break-all;
+      box-sizing: border-box;
+      -webkit-user-select: all;
+      user-select: all;
+    }
+    .link-field.show { display: block; }
+    .link-hint {
+      display: none;
+      font-size: 12px;
+      opacity: 0.75;
+      line-height: 1.5;
+      max-width: 320px;
+      margin: 0;
+    }
+    .link-hint.show { display: block; }
     #boot-loader .spinner {
       width: 36px;
       height: 36px;
@@ -182,6 +208,8 @@
       <button id="open-browser-btn" class="btn-primary" type="button">🌐  Chrome 앱에서 열기</button>
       <button id="copy-link-btn" class="btn-secondary" type="button">📋  링크 복사</button>
     </div>
+    <input id="link-field" class="link-field" readonly aria-label="게임 주소">
+    <p id="link-hint" class="link-hint">아래 주소를 길게 눌러 복사한 뒤 Chrome 주소창에 붙여넣으세요</p>
   </div>
 
   <div id="boot-loader" aria-live="polite" aria-busy="true">
@@ -202,7 +230,7 @@
 
   <script>
     (function () {
-      var BUILD = '20260809b';
+      var BUILD = '20260809c';
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function (regs) {
           regs.forEach(function (reg) { reg.unregister(); });
@@ -232,8 +260,27 @@
         var url = new URL(location.href);
         url.searchParams.set('mode', mode === 'menu' || mode === 'campaign' ? mode : 'arcade');
         url.searchParams.set('gate', '0');
+        url.searchParams.set('fresh', '1');
         url.searchParams.delete('from');
+        url.searchParams.delete('resume');
         return url.toString();
+      }
+
+      function revealLinkField() {
+        var field = document.getElementById('link-field');
+        var hint = document.getElementById('link-hint');
+        var link = gameUrl();
+        if (field) {
+          field.value = link;
+          field.classList.add('show');
+          field.focus();
+          field.select();
+          try {
+            field.setSelectionRange(0, link.length);
+          } catch (e) {}
+        }
+        if (hint) hint.classList.add('show');
+        return field;
       }
 
       function isInAppShell() {
@@ -259,21 +306,32 @@
 
       function copyGameLink() {
         var link = gameUrl();
+        var field = revealLinkField();
         function done(ok) {
-          showToast(ok ? '링크가 복사되었어요!' : '복사에 실패했어요');
-        }
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(link).then(function () { done(true); }).catch(fallbackCopy);
-        } else {
-          fallbackCopy();
+          showToast(ok
+            ? '복사됐어요! Chrome 주소창에 붙여넣기'
+            : '아래 주소를 길게 눌러 복사하세요');
         }
         function fallbackCopy() {
+          if (field) {
+            field.focus();
+            field.select();
+            try {
+              done(document.execCommand('copy'));
+              return;
+            } catch (e) {}
+          }
           var ta = document.createElement('textarea');
           ta.value = link;
           ta.setAttribute('readonly', '');
           ta.style.position = 'fixed';
-          ta.style.left = '-9999px';
+          ta.style.top = '0';
+          ta.style.left = '0';
+          ta.style.width = '2em';
+          ta.style.height = '2em';
+          ta.style.opacity = '0';
           document.body.appendChild(ta);
+          ta.focus();
           ta.select();
           try {
             done(document.execCommand('copy'));
@@ -281,6 +339,13 @@
             done(false);
           }
           document.body.removeChild(ta);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link)
+            .then(function () { done(true); })
+            .catch(fallbackCopy);
+        } else {
+          fallbackCopy();
         }
       }
 
@@ -356,11 +421,15 @@
 
       function bindTap(el, fn) {
         if (!el) return;
-        el.addEventListener('touchstart', function (e) {
-          e.preventDefault();
+        var lastTap = 0;
+        function run(e) {
+          if (e.type === 'click' && Date.now() - lastTap < 500) return;
+          lastTap = Date.now();
+          if (e.cancelable) e.preventDefault();
           fn();
-        }, { passive: false });
-        el.addEventListener('click', fn);
+        }
+        el.addEventListener('touchstart', run, { passive: false });
+        el.addEventListener('click', run);
       }
 
       bindTap(document.getElementById('start-btn'), startFlutter);

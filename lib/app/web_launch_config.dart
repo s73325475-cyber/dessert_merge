@@ -36,6 +36,25 @@ abstract final class WebLaunchConfig {
     return Uri.base.queryParameters['gate'] != '0';
   }
 
+  /// 블로그·공유 링크 등 — 저장된 판을 이어하지 않고 새 게임
+  static bool get shouldStartFresh {
+    if (!kIsWeb) return false;
+    final u = Uri.base;
+    final fresh = (u.queryParameters['fresh'] ?? u.queryParameters['new'] ?? '')
+        .toLowerCase();
+    if (fresh == '1' || fresh == 'true' || fresh == 'yes') return true;
+    final from = (u.queryParameters['from'] ?? '').toLowerCase();
+    if (from == 'blog' || from == 'naver') return true;
+    return false;
+  }
+
+  /// URL로 명시적 이어하기 (`?mode=arcade&resume=1`)
+  static bool get shouldResumeSaved {
+    if (!kIsWeb) return false;
+    final resume = (Uri.base.queryParameters['resume'] ?? '').toLowerCase();
+    return resume == '1' || resume == 'true' || resume == 'yes';
+  }
+
   static bool get isDirectPlay =>
       kIsWeb && parseTarget() != WebLaunchTarget.menu;
 }

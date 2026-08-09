@@ -48,6 +48,11 @@ class _DessertMergeAppState extends State<DessertMergeApp> {
   @override
   void initState() {
     super.initState();
+    if (kIsWeb &&
+        WebLaunchConfig.shouldStartFresh &&
+        WebLaunchConfig.parseTarget() == WebLaunchTarget.arcade) {
+      widget.store.clearGameSession();
+    }
     if (kIsWeb && _webGatePassed) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await widget.audio.unlockForWeb();
@@ -124,7 +129,9 @@ class _DessertMergeAppState extends State<DessertMergeApp> {
     _webAutoLaunchDone = true;
     switch (target) {
       case WebLaunchTarget.arcade:
-        final resumeArcade = widget.store.hasGameSave &&
+        final resumeArcade = WebLaunchConfig.shouldResumeSaved &&
+            !WebLaunchConfig.shouldStartFresh &&
+            widget.store.hasGameSave &&
             widget.store.savedRunMode == GameRunMode.arcade;
         await _openGame(ctx, fresh: !resumeArcade, arcade: true);
       case WebLaunchTarget.campaign:
