@@ -4,9 +4,12 @@ import 'package:google_adsense/google_adsense.dart';
 import 'package:google_adsense/h5.dart';
 
 import '../app/ad_config.dart';
+import 'ad_types.dart';
 import 'ads_stub.dart' as stub;
 
 bool _sdkInitialized = false;
+
+bool get adsUsingStub => !AdConfig.isConfigured || !_sdkInitialized;
 
 Future<void> initAds() async {
   if (!AdConfig.isConfigured || _sdkInitialized) return;
@@ -35,46 +38,63 @@ Future<void> initAds() async {
 
 Future<void> showRewardedAd(
   void Function() onReward, {
-  void Function()? onFail,
-  void Function()? onStart,
+  AdPlacement placement = AdPlacement.coins,
+  void Function(AdFailReason reason)? onFail,
+  void Function({required bool stub})? onStart,
 }) async {
   if (!AdConfig.isConfigured || !_sdkInitialized) {
-    return stub.showRewardedAd(onReward, onFail: onFail, onStart: onStart);
+    return stub.showRewardedAd(
+      onReward,
+      placement: placement,
+      onFail: onFail,
+      onStart: onStart,
+    );
   }
 
-  onStart?.call();
+  onStart?.call(stub: false);
 
-  final completer = Completer<bool>();
+  final completer = Completer<BreakStatus?>();
   var settled = false;
 
-  void settle(bool viewed) {
+  void settle(BreakStatus? status) {
     if (settled) return;
     settled = true;
-    if (!completer.isCompleted) completer.complete(viewed);
+    if (!completer.isCompleted) completer.complete(status);
   }
 
-  h5GamesAds.adBreak(
-    AdBreakPlacement.rewarded(
-      name: 'dessert-reward',
-      beforeAd: () {},
-      beforeReward: (showAdFn) => showAdFn(),
-      adDismissed: () {},
-      adViewed: () {},
-      afterAd: () {},
-      adBreakDone: (info) {
-        settle(info.breakStatus == BreakStatus.viewed);
-      },
-    ),
-  );
+  try {
+    h5GamesAds.adBreak(
+      AdBreakPlacement.rewarded(
+        name: 'dessert-reward-${placement.debugName}',
+        beforeAd: () {},
+        // 유저가 보상 광고를 요청한 뒤이므로 show 진행
+        beforeReward: (showAdFn) => showAdFn(),
+        adDismissed: () {},
+        adViewed: () {},
+        afterAd: () {},
+        adBreakDone: (info) {
+          settle(info.breakStatus);
+        },
+      ),
+    );
+  } catch (_) {
+    onFail?.call(AdFailReason.error);
+    return;
+  }
 
-  final viewed = await completer.future.timeout(
+  final status = await completer.future.timeout(
     const Duration(seconds: 120),
-    onTimeout: () => false,
+    onTimeout: () => null,
   );
 
-  if (viewed) {
+  if (status == BreakStatus.viewed) {
     onReward();
+    return;
+  }
+
+  if (status == null) {
+    onFail?.call(AdFailReason.timeout);
   } else {
-    onFail?.call();
+    onFail?.call(AdFailReason.dismissed);
   }
 }

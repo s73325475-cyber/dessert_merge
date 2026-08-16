@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app/ad_config.dart';
 import 'app/app_release_config.dart';
 import 'app/web_launch_config.dart';
 import 'game/ads.dart';
@@ -357,6 +358,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         _BossRewardModal(game: game),
                         _BossRouteModal(game: game),
                         _GameOver(game: game),
+                        const _AdModeBadge(),
                       ],
                     ),
                   ),
@@ -1033,7 +1035,8 @@ class _GameOver extends StatelessWidget {
                     style: _btnStyle(const Color(0xfff5b945)),
                     onPressed: game.continueGame,
                     child: Text(
-                      '▶️ 계속하기 (광고 · 🚀${GameConfig.adContinueShots} 회복)',
+                      '▶️ 계속하기 (광고 · 🚀${GameConfig.adContinueShots} 회복'
+                      ' · 남은 ${game.store.adQuota.remaining(AdPlacement.continueGame)}회)',
                       style: AppUi.button,
                       textAlign: TextAlign.center,
                     ),
@@ -1099,8 +1102,11 @@ class _BossRewardModal extends StatelessWidget {
                     ElevatedButton(
                       style: _btnStyle(const Color(0xff34d399)),
                       onPressed: game.bossRewardWatchAd,
-                      child: Text('🎬 광고 보고 아이템 한 번 더',
-                          style: AppUi.button.copyWith(color: Colors.white)),
+                      child: Text(
+                        '🎬 광고 보고 아이템 한 번 더'
+                        ' · 남은 ${game.store.adQuota.remaining(AdPlacement.bossExtra)}회',
+                        style: AppUi.button.copyWith(color: Colors.white),
+                      ),
                     ),
                   const SizedBox(height: 10),
                   ElevatedButton(
@@ -1287,8 +1293,11 @@ class _ShopModalState extends State<_ShopModal> {
                       child: ElevatedButton(
                         style: _btnStyle(const Color(0xff34d399)),
                         onPressed: () => setState(game.watchAdForCoins),
-                        child: Text('🎬 광고 보고 🪙+50',
-                            style: AppUi.button.copyWith(color: Colors.white)),
+                        child: Text(
+                          '🎬 광고 보고 🪙+${Coins.adReward}'
+                          ' · 남은 ${game.store.adQuota.remaining(AdPlacement.coins)}회',
+                          style: AppUi.button.copyWith(color: Colors.white),
+                        ),
                       ),
                     ),
                     const _SectionLabel('파워업'),
@@ -1700,6 +1709,46 @@ ButtonStyle _btnStyle(Color bg) => ElevatedButton.styleFrom(
       shape: const StadiumBorder(),
       elevation: 2,
     );
+
+/// stub / 테스트 / 실광고 구분 배지 (Phase 0 QA용)
+class _AdModeBadge extends StatelessWidget {
+  const _AdModeBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final show = kDebugMode || AdConfig.testMode || adsUsingStub;
+    if (!show) return const SizedBox.shrink();
+    final label = adModeLabel();
+    final color = switch (label) {
+      'AD LIVE' => const Color(0xff34d399),
+      'AD TEST' => const Color(0xfff5b945),
+      _ => const Color(0xfffb7185),
+    };
+    return Positioned(
+      right: 10,
+      bottom: 10,
+      child: IgnorePointer(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.8)),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _Label extends StatelessWidget {
   const _Label(this.text);

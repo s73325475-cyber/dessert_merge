@@ -115,8 +115,18 @@ Secret이 없어도 배포 워크플로가 기본 Publisher ID(`ca-pub-620596995
 |------|-------|------|
 | `AD_TEST_MODE` | `true` | 처음 연동·UI 확인 (테스트 광고) |
 | `AD_TEST_MODE` | `false` | 테스트 완료 후 **실광고·수익** |
+| `AD_ALLOW_STUB_REWARD` | `true` | 로컬/미연동 시 stub로 보상(개발) |
+| `AD_ALLOW_STUB_REWARD` | `false` | **릴리스에서 stub 보상 금지** (권장) |
 
 Variable이 없으면 Publisher ID 설정 시 기본 **`true`(테스트)** 로 빌드됩니다.
+
+### Phase 0 코드 보강 (적용됨)
+
+- 시청 **미완료/실패** 시 보상 없음 + 토스트 안내
+- 슬롯별 **일일 시청 한도** (계속하기 8 / 보스 10 / 코인 12)
+- 화면 우하단 `AD STUB` / `AD TEST` / `AD LIVE` 배지 (QA)
+- 릴리스 + `AD_ALLOW_STUB_REWARD=false` 이면 Publisher 미설정 시 공짜 보상 차단
+
 
 ### 4-4. (선택) 네이버 앱 WebView용 AdMob
 

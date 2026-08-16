@@ -160,6 +160,11 @@ class GameConfig {
   /// 광고 시청 후 게임 오버 부활 — 고정 지급 발사 수
   static const int adContinueShots = 5;
 
+  /// 일일 광고 시청 한도 (슬롯별)
+  static const int adDailyContinueLimit = 8;
+  static const int adDailyBossLimit = 10;
+  static const int adDailyCoinsLimit = 12;
+
   /// 모든 티어 공통 — 물리·렌더 동일 반경 (조준 혼동 방지)
   static const double dessertRadius = 2.1;
 

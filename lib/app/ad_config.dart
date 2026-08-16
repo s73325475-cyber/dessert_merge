@@ -31,6 +31,13 @@ abstract final class AdConfig {
     defaultValue: true,
   );
 
+  /// stub 경로에서 보상을 줄지 여부.
+  /// 릴리스+false 이면 Publisher 미설정 시 보상 없이 실패 처리.
+  static const bool allowStubReward = bool.fromEnvironment(
+    'AD_ALLOW_STUB_REWARD',
+    defaultValue: true,
+  );
+
   static bool get isConfigured => publisherId.trim().isNotEmpty;
 
   /// [adSense.initialize] 에 전달할 Publisher ID (ca-pub- 접두사 제거)

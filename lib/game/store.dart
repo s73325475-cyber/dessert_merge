@@ -4,16 +4,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'daily_missions.dart';
 import 'game_run_mode.dart';
+import 'ad_quota.dart';
 
 // 코인 / 인벤토리 / 스킨·테마 / 영구 퍼크 영속 저장
 class Store {
   Store(this._prefs) {
     _load();
     daily.ensureToday(DateTime.now(), Random());
+    adQuota = AdQuota(_prefs);
   }
 
   final SharedPreferences _prefs;
   SharedPreferences get prefs => _prefs;
+  late final AdQuota adQuota;
   static const _key = 'dbm_store_v1';
   static const _gameKey = 'dbm_game_v1';
   static const _dailyKey = 'dbm_daily_v1';

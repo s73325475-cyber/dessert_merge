@@ -42,6 +42,7 @@ jobs:
         env:
           AD_PUBLISHER_ID: ${{ secrets.AD_PUBLISHER_ID }}
           AD_TEST_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.ad_test_mode != '' && inputs.ad_test_mode || vars.AD_TEST_MODE }}
+          AD_ALLOW_STUB_REWARD: ${{ vars.AD_ALLOW_STUB_REWARD }}
           ADMOB_REWARDED_SLOT: ${{ secrets.ADMOB_REWARDED_SLOT }}
           ADMOB_INTERSTITIAL_SLOT: ${{ secrets.ADMOB_INTERSTITIAL_SLOT }}
         run: |
@@ -53,6 +54,12 @@ jobs:
             DARGS="$DARGS --dart-define=AD_TEST_MODE=$AD_TEST_MODE"
           else
             DARGS="$DARGS --dart-define=AD_TEST_MODE=true"
+          fi
+          # 릴리스 웹: stub 공짜 보상 기본 차단 (변수로 덮어쓰기 가능)
+          if [ -n "$AD_ALLOW_STUB_REWARD" ]; then
+            DARGS="$DARGS --dart-define=AD_ALLOW_STUB_REWARD=$AD_ALLOW_STUB_REWARD"
+          else
+            DARGS="$DARGS --dart-define=AD_ALLOW_STUB_REWARD=false"
           fi
           if [ -n "$ADMOB_REWARDED_SLOT" ]; then
             DARGS="$DARGS --dart-define=ADMOB_REWARDED_SLOT=$ADMOB_REWARDED_SLOT"

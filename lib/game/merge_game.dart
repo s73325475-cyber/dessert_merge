@@ -1501,7 +1501,15 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
     _adContinuePending = true;
     showRewardedAd(
       _resumeAfterAdContinue,
-      onFail: () => _adContinuePending = false,
+      placement: AdPlacement.continueGame,
+      quota: store.adQuota,
+      onFail: (reason) {
+        _adContinuePending = false;
+        _showToast(reason.userMessage);
+      },
+      onStart: ({required stub}) {
+        if (stub) _showToast('광고 대체 모드…');
+      },
     );
   }
 
@@ -1797,11 +1805,20 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
   }
 
   void bossRewardWatchAd() {
-    showRewardedAd(() {
-      final extra = _grantBossPerk(_lastBossClearStage);
-      bossReward.value = [...?bossReward.value, extra];
-      audio.stageStart();
-    });
+    showRewardedAd(
+      () {
+        final extra = _grantBossPerk(_lastBossClearStage);
+        bossReward.value = [...?bossReward.value, extra];
+        audio.stageStart();
+        _showToast('광고 보상 지급!');
+      },
+      placement: AdPlacement.bossExtra,
+      quota: store.adQuota,
+      onFail: (reason) => _showToast(reason.userMessage),
+      onStart: ({required stub}) {
+        if (stub) _showToast('광고 대체 모드…');
+      },
+    );
   }
 
   void closeBossReward() {
@@ -1896,10 +1913,19 @@ class MergeGame extends Forge2DGame with MultiTouchDragDetector {
   }
 
   void watchAdForCoins() {
-    showRewardedAd(() {
-      store.addCoins(Coins.adReward);
-      coins.value = store.coins;
-    });
+    showRewardedAd(
+      () {
+        store.addCoins(Coins.adReward);
+        coins.value = store.coins;
+        _showToast('🪙 +${Coins.adReward}');
+      },
+      placement: AdPlacement.coins,
+      quota: store.adQuota,
+      onFail: (reason) => _showToast(reason.userMessage),
+      onStart: ({required stub}) {
+        if (stub) _showToast('광고 대체 모드…');
+      },
+    );
   }
 
   /// 개발자 테스트 — 보스 영구 아이템(퍼크) 전부 삭제
